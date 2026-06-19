@@ -1,0 +1,75 @@
+.booking-variant-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: hidden;
+}
+
+.variant-card-item {
+    flex: 1;
+    min-width: 0;
+}
+
+/* === MOBILE: I-shrink ang laman ng cards === */
+.variant-card-item .card .text-lg {
+    font-size: 0.7rem !important;
+}
+
+.variant-card-item .card img {
+    max-height: 2.5rem !important;
+}
+
+.variant-card-item .card p {
+    font-size: 0.55rem !important;
+    letter-spacing: 0.03em !important;
+}
+
+.variant-card-item .card button {
+    font-size: 0.55rem !important;
+    padding: 0.25rem 0.5rem !important;
+}
+
+.variant-card-item .card > div {
+    padding: 0.6rem !important;
+    min-height: 200px !important;
+}
+
+/* === TABLET & DESKTOP === */
+@media (min-width: 768px) {
+    .booking-variant-grid {
+        gap: 1.5rem;
+        justify-content: center;
+    }
+
+    .variant-card-item {
+        flex: none;
+        width: 260px;
+    }
+
+    /* I-reset ang mga overrides sa desktop */
+    .variant-card-item .card .text-lg {
+        font-size: 1.125rem !important;
+    }
+
+    .variant-card-item .card img {
+        max-height: 4rem !important;
+    }
+
+    .variant-card-item .card p {
+        font-size: 0.75rem !important;
+        letter-spacing: 0.05em !important;
+    }
+
+    .variant-card-item .card button {
+        font-size: 0.75rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .variant-card-item .card > div {
+        padding: 1.25rem !important;
+        min-height: 280px !important;
+    }
+}

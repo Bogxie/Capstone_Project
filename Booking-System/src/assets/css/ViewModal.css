@@ -1,0 +1,31 @@
+/* ViewModal.css */
+
+/* Custom scrollbar container track */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;               /* Lapad ng vertical scrollbar */
+    height: 6px;              /* Taas ng horizontal scrollbar kung mayroon */
+}
+
+/* Background ng scrollbar track */
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(24, 24, 27, 0.5); /* Katumbas ng bg-zinc-900/50 */
+    border-radius: 8px;
+}
+
+/* Ang mismong draggable handle ng scrollbar */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(63, 63, 70, 0.8);  /* Katumbas ng bg-zinc-700 */
+    border-radius: 8px;
+    border: 1px solid rgba(24, 24, 27, 0.5); /* Space sa gilid */
+}
+
+/* Hover effect sa handle */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.6); /* Katumbas ng hover:bg-amber-500/60 */
+}
+
+/* Firefox Support (Fallback) */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(63, 63, 70, 0.8) rgba(24, 24, 27, 0.5);
+}

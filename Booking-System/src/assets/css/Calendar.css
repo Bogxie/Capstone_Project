@@ -1,0 +1,25 @@
+
+.day-cell-standard {
+    -webkit-text-stroke: 0.1rem #1e1e1e;
+    color: #6184D8;
+    background-color: #1e1e1e;
+    border: 1px solid rgba(245, 245, 245, 0.35) !important; 
+}
+
+.day-cell-standard:hover {
+    background-image: none !important; /* Siguradong walang strip gradient na maiiwan */
+    background-color: #ffffff !important;
+    color: #1e1e1e !important;
+    border: 1px solid #1e1e1e !important;
+}
+
+.day-cell-booked {
+    color: #ffffff !important;
+    text-shadow: 0px 0px 2px #1e1e1e;
+    border: 1px solid #1e1e1e !important;
+}
+
+.calendar-month-title {
+    font-variant-caps: all-petite-caps;
+    -webkit-text-stroke: 0.5px white;
+}
