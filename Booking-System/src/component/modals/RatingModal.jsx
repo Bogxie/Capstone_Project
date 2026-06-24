@@ -76,7 +76,7 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
     return (
         <>
             {/* Backdrop / Overlay */}
-            <div className="fixed inset-0 z-[260] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm">
                 <div className="relative w-full max-w-md rounded-lg border border-amber-500 bg-neutral-900 p-6 text-center text-white shadow-xl">
                     
                     {/* Modal Header */}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { UpdateStatus } from './UpdateStatus';
 import { colorStatus } from '../assets/utils/colorStatus';
 import { formatCurrency } from "../assets/Utils/formatCurrency";
-import { AdminViewModal } from './modals/AdmineViewModal';
+import { AdminViewModal } from './modals/AdminViewModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { CompleteModal } from './modals/CompleteModal'
 import BookingLogo from '../assets/Images/bookings.png';

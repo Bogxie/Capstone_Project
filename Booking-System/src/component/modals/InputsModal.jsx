@@ -3,8 +3,8 @@ import { timeOptions } from "../../assets/utils/tImeOptions.jsx";
 import { LocationPickerMap } from "../Locationpickermap.jsx";
 
 const themeMap = {
-    "header-golden":    { bg: "bg-[#F59E0B]", text: "text-black" },
-    "header-snoop":     { bg: "bg-[#92400E]", text: "text-white" },
+    "header-golden": { bg: "bg-[#F59E0B]", text: "text-black" },
+    "header-snoop": { bg: "bg-[#92400E]", text: "text-white" },
     "header-projector": { bg: "bg-[#1E293B]", text: "text-white" },
 };
 
@@ -21,6 +21,23 @@ export const InputsModal = ({
     const locationSelected = !!(bookingDetails.venue && bookingDetails.lat);
     const theme = themeMap[serviceConfig.theme.color] ?? { bg: "bg-gray-700", text: "text-white" };
     const [showMap, setShowMap] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState(null);
+
+    const handleTypeChange = (e) => {
+        const selectedValue = e.target.value;
+
+        const selectedOption = serviceConfig.options.find(opt => opt.value === selectedValue);
+        const pkg = serviceConfig.packages.find(pkg => pkg.name === selectedOption?.label);
+
+        const parsedPrice = pkg
+            ? Number(pkg.price.replace(/[₱,]/g, ""))
+            : 0;
+
+        setSelectedPackage(pkg || null); // ← ito ang bago
+
+        handleChange({ target: { name: "type", value: selectedValue } });
+        handleChange({ target: { name: "rentalFee", value: parsedPrice } });
+    };
 
     return (
         <div className="flex flex-col h-full max-h-[calc(90vh-100px)]">
@@ -118,7 +135,7 @@ export const InputsModal = ({
                 {/* Event Type */}
                 <div className="flex flex-col">
                     <label className="text-sm font-semibold text-gray-700">📄 {serviceConfig.label}</label>
-                    <select name="type" value={bookingDetails.type} onChange={handleChange} required className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none">
+                    <select name="type" value={bookingDetails.type} onChange={handleTypeChange} required className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none">
                         <option value="" disabled>Select {serviceConfig.label}</option>
                         {serviceConfig.options.map((opt, i) => (
                             <option key={i} value={opt.value}>{opt.label}</option>
@@ -126,7 +143,19 @@ export const InputsModal = ({
                     </select>
                 </div>
 
-                 {/* Description */}
+                {selectedPackage && (
+                    <div className={`mt-2 flex justify-between items-start px-3 py-2 rounded-lg border ${theme.bg} ${theme.text}`}>
+                        <div>
+                            <p className="text-xs font-bold">📦 {selectedPackage.name}</p>
+                            <p className="text-xs opacity-75 mt-0.5">{selectedPackage.details}</p>
+                        </div>
+                        <span className="text-sm font-bold ml-3 whitespace-nowrap">
+                            {selectedPackage.price}
+                        </span>
+                    </div>
+                )}
+
+                {/* Description */}
                 <div className="flex flex-col">
                     <label className="text-sm font-semibold text-gray-700">📝 Event Description</label>
                     <input
@@ -147,11 +176,10 @@ export const InputsModal = ({
                         <button
                             type="button"
                             onClick={() => setShowMap(prev => !prev)}
-                            className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
-                                showMap
-                                    ? "bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300"
-                                    : "bg-blue-500 border-blue-500 text-white hover:bg-blue-600"
-                            }`}
+                            className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${showMap
+                                ? "bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300"
+                                : "bg-blue-500 border-blue-500 text-white hover:bg-blue-600"
+                                }`}
                         >
                             {showMap ? "Hide Map ▲" : "Open Map ▼"}
                         </button>
@@ -179,7 +207,7 @@ export const InputsModal = ({
                         type="text"
                         name="venue"
                         value={bookingDetails.venue}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         required
                         tabIndex={-1}
                         aria-hidden="true"
@@ -211,7 +239,7 @@ export const InputsModal = ({
                     )}
                 </div>
 
-               
+
 
                 {/* Time Error */}
                 {timeError && (

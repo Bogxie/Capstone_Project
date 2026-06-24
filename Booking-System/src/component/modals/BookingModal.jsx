@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { InputsModal } from "./InputsModal.jsx";
 import { BookingSummaryModal } from "./BookingSummary.jsx";
 import { PaymentModal } from './PaymentModal.jsx';
-import { getDeliveryFee } from '../../assets/utils/deliveryOptions.js'
+import { getDeliveryFee } from '../../assets/utils/deliveryOptions.js';
 import { timeFormat } from "../../assets/Utils/tImeOptions.jsx";
 import { timeRestriction } from "../../assets/Utils/TimeRestriction.js";
 import { calculatingTotal } from "../../assets/Utils/calculatingTotal.js";
 import { TermsModal } from "./TermsModal.jsx";
 import { service_config } from "../../assets/Utils/ServiceConfig.js";
-import '../../assets/css/BookingModal.css'
+import '../../assets/css/BookingModal.css';
 
 const Downpayment = 1000;
 
@@ -32,33 +32,39 @@ export const BookingModal = ({
     const [timeError, setTimeError] = useState('');
     const scrollContainerRef = useRef(null);
 
-    const [bookingDetails, setBookingDetails] = useState({
-        fullName: "",
-        email: "",
-        phoneNum: "",
-        rentalFee: 0,
-        municipality: "",
-        deliveryFee: 0,
-        venue: "",
-        lat: null,
-        lng: null,
-        description: "",
-        status: "Pending",
-        tax: 0,
-        type: "",
-        total: 0,
-        downpayment: Downpayment,
-        timeStart: "",
-        timeStartAmPm: "AM",
-        paymentMethod: "",
-        timeEnd: "",
-        timeEndAmPm: "PM",
-        service: serviceName,
-        month: selectedDate.month,
-        date: selectedDate.date,
-        year: selectedDate.year
+    // OPTIMIZED INITIALIZATION: Direkta nang binabasa ang config price dito
+    // para maiwasan ang cascading/extra render cycles ng useEffect
+    const [bookingDetails, setBookingDetails] = useState(() => {
+        const packagePrice = config ? Number(config.price || config.rate) || 0 : 0;
+        return {
+            fullName: "",
+            email: "",
+            phoneNum: "",
+            rentalFee: packagePrice, 
+            municipality: "",
+            deliveryFee: 0,
+            venue: "",
+            lat: null,
+            lng: null,
+            description: "",
+            status: "Pending",
+            tax: 0,
+            type: "",
+            total: 0,
+            downpayment: Downpayment,
+            timeStart: "",
+            timeStartAmPm: "AM",
+            paymentMethod: "",
+            timeEnd: "",
+            timeEndAmPm: "PM",
+            service: serviceName,
+            month: selectedDate.month,
+            date: selectedDate.date,
+            year: selectedDate.year
+        };
     });
 
+    // Reset scroll container kapag nagbago ang step
     useEffect(() => {
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = 0;
@@ -86,10 +92,9 @@ export const BookingModal = ({
         console.log("LOG: Ano ang laman ng municipality?", municipality);   
 
         if (fee === null) {
-            // May lokasyon pero hindi kasama sa listahan ng Cavite
             setBookingDetails(prev => ({
                 ...prev,
-                venue: "", // Burahin ang venue para mag-trigger ang HTML5 required input validation
+                venue: "", 
                 lat: null,
                 lng: null,
                 municipality: "",
@@ -128,15 +133,19 @@ export const BookingModal = ({
         }
 
         const alertMessage = timeRestriction(bookingDetails, timeFormat);
-        const totals = calculatingTotal(bookingDetails.deliveryFee);
+        
+        // Dito ay 100% accurate na ang bookingDetails.rentalFee mula sa ating initial state
+        const totals = calculatingTotal(bookingDetails.deliveryFee, bookingDetails.rentalFee);
 
         if (alertMessage) {
             setTimeError(alertMessage);
             setTimeout(() => setTimeError(""), 5000);
             return;
         }
+        
         setBookingDetails(prev => ({
-            ...prev, ...totals,
+            ...prev, 
+            ...totals,
             downpayment: Downpayment,
             remainingBalance: totals.total - Downpayment,
         }));
@@ -168,7 +177,7 @@ export const BookingModal = ({
                             {/* modal-header */}
                             <div className={`flex justify-between items-center py-4 px-3 rounded-t-xl shrink-0 ${theme.bg}`}>
                                 <h5 className={`text-sm font-semibold mb-0 ${serviceName !== "Golden Hour" ? "text-white" : "text-black"}`}>
-                                    Booking Reservation Form
+                                    Booking Reservation Form ({serviceName})
                                 </h5>
                                 {step === 1 && (
                                     <button

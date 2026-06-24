@@ -28,6 +28,8 @@ function App() {
   const [showChat, setShowChat] = useState(false);
   const [serviceConfig, setServiceConfig] = useState(service_config);
   const [deliveryFee, setDeliveryFee] = useState(deliveryOption);
+  const [blackoutDates, setBlackoutDates] = useState([]);
+  const [disableServices, setDisableServices] = useState([])
 
   useEffect(() => {
 
@@ -91,7 +93,12 @@ function App() {
                   serviceConfig={serviceConfig}
                   setServiceConfig={setServiceConfig}
                 />
-                <Calendar bookings={bookings} addBooking={addBooking} />
+                <Calendar
+                  bookings={bookings}
+                  addBooking={addBooking}
+                  blackoutDates={blackoutDates}
+                  disableServices={disableServices}
+                />
                 <ReviewContainer />
               </>
             } />
@@ -113,6 +120,10 @@ function App() {
                   setDeliveryFee={setDeliveryFee}
                   serviceConfig={serviceConfig}
                   setServiceConfig={setServiceConfig}
+                  blackoutDates={blackoutDates}
+                  setBlackoutDates={setBlackoutDates}
+                  disableServices={disableServices}
+                  setDisableServices={setDisableServices}
                 />} />
               </Route>
             </Route>

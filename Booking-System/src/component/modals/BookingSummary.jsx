@@ -60,7 +60,10 @@ export const BookingSummaryModal = ({
                                     ["📅 Date", `${bookingDetails.month} ${bookingDetails.date}, ${bookingDetails.year}`],
                                     ["🕐 Time", `${bookingDetails.timeStart} ${bookingDetails.timeStartAmPm} - ${bookingDetails.timeEnd} ${bookingDetails.timeEndAmPm}`],
                                     ["📍 Venue", bookingDetails.venue],
-                                    ["💰 Rental Fee", `₱ ${formatCurrency(bookingDetails.rentalFee)}`],
+                                    [
+                                        bookingDetails.service === "Rental Projector" ? "💰 Rental Fee" : "💼 Package Fee",
+                                        `₱ ${formatCurrency(bookingDetails.rentalFee)}`
+                                    ],
                                     ["🚚 Delivery Fee", `${bookingDetails.municipality} (₱ ${formatCurrency(bookingDetails.deliveryFee)})`],
                                     ["🧾 Tax", `₱ ${formatCurrency(bookingDetails.tax)}`],
                                     ["💳 Total", `₱ ${formatCurrency(bookingDetails.total)}`],
@@ -166,7 +169,7 @@ export const BookingSummaryModal = ({
                                         ref={pinRefs[i]}
                                         type="password"
                                         maxLength={1}
-                                        className="w-[50px] h-[50px] text-center font-bold text-2xl rounded-lg border-0 outline-none"
+                                        className="w-[50px] h-[50px] text-center font-bold text-2xl bordered rounded-lg border-0 outline-none"
                                         value={p}
                                         onChange={(e) => handlePinChange(i, e.target.value)}
                                     />

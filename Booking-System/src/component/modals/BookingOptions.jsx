@@ -5,7 +5,7 @@ import logo from "../../assets/images/Golden.png"
 import logo2 from "../../assets/images/Snoop.png"
 import logo3 from "../../assets/images/logo.jpg"
 
-export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt, bookedServices  }) => {
+export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt, bookedServices, disableServices = [] }) => {
     const [selected, setSelected] = useState("");
     const [isConfirmed, setIsConfirmed] = useState(false);
 
@@ -77,19 +77,23 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                 <ul className="space-y-2">
                                     {services.map((svc, i) => {
                                         const isBooked = bookedServices?.has(svc.service);
+                                        // BAGO: Service-level unavailability galing sa Settings (under maintenance)
+                                        const isDisabled = disableServices.includes(svc.service);
+                                        // Hindi pwedeng piliin kung booked na sa araw na ito, O naka-disable globally
+                                        const isUnselectable = isBooked || isDisabled;
                                         const isCurrentSelected = selected === svc.service;
 
                                         return (
                                             <li
                                                 key={i}
-                                                onClick={() => !isBooked && setSelected(svc.service)}
+                                                onClick={() => !isUnselectable && setSelected(svc.service)}
                                                 className={`
                                                     p-2 rounded-[10px] border transition-all duration-200
                                                     ${isCurrentSelected
                                                         ? `${svc.selectedBg} ${svc.selectedText} font-bold border-[#1e1e1e]`
                                                         : "border-transparent hover:bg-gray-100"
                                                     }
-                                                    ${isBooked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                                                    ${isUnselectable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                                                 `}
                                             >
                                                 <div className="flex justify-between items-center">
@@ -97,11 +101,17 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                                         <img
                                                             src={svc.image}
                                                             alt={`logo-${i}`}
-                                                            className={`w-12 ${isBooked ? "opacity-40" : ""}`}
+                                                            className={`w-12 ${isUnselectable ? "opacity-40" : ""}`}
                                                         />
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-sm">{svc.service}</span>
-                                                            {isBooked && (
+                                                            {/* BAGO: Unavailable badge, mas priority kaysa Booked badge */}
+                                                            {isDisabled && (
+                                                                <span className="bg-gray-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                                                                    Unavailable
+                                                                </span>
+                                                            )}
+                                                            {!isDisabled && isBooked && (
                                                                 <span className="bg-red-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
                                                                     Booked
                                                                 </span>
@@ -113,8 +123,8 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                                         name="service"
                                                         value={svc.service}
                                                         checked={isCurrentSelected}
-                                                        onChange={() => !isBooked && setSelected(svc.service)}
-                                                        disabled={isBooked}
+                                                        onChange={() => !isUnselectable && setSelected(svc.service)}
+                                                        disabled={isUnselectable}
                                                         className="accent-[#6184D8]"
                                                     />
                                                 </div>
