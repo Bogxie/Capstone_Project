@@ -3,6 +3,7 @@ import { AdminDashboard } from "./AdminDashboard";
 import { service } from '../assets/utils/services.js'
 import { service_config } from '../assets/Utils/ServiceConfig.js';
 import { RevenueReport } from "./RevenueReport.jsx";
+import { useBooking } from "../context/useBooking.js";
 
 const themeMap = {
     "header-golden": "bg-[#F59E0B] text-black",
@@ -18,8 +19,9 @@ const tabs = [
     { key: "Cancel", label: "Cancelled", color: "text-red-400", filter: (b) => b.status === 'Cancelled' },
 ];
 
-export const AdminPage = ({ bookings, updateBooking }) => {
+export const AdminPage = () => {
 
+    const { bookings, updateBooking } = useBooking();
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState("All");
     const [selectedService, setSelectedService] = useState(null);

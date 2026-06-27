@@ -10,6 +10,7 @@ import { calculatingTotal } from "../../assets/Utils/calculatingTotal.js";
 import { TermsModal } from "./TermsModal.jsx";
 import { service_config } from "../../assets/Utils/ServiceConfig.js";
 import '../../assets/css/BookingModal.css';
+import { useBooking } from "../../context/useBooking.js";
 
 const Downpayment = 1000;
 
@@ -20,12 +21,13 @@ const headerTheme = {
 };
 
 export const BookingModal = ({
-    selectedDate, addBooking, onClose, showReceipt, serviceName, handleBackOptions
+    selectedDate, onClose, showReceipt, serviceName, handleBackOptions
 }) => {
 
     const config = service_config[serviceName];
     const theme = headerTheme[serviceName] ?? { bg: "bg-gray-700", closeBtn: "text-white" };
 
+    const { addBooking } = useBooking();
     const [step, setStep] = useState(1);
     const [showTerms, setShowTerms] = useState(false);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
@@ -88,9 +90,7 @@ export const BookingModal = ({
 
     const handleLocationSelect = ({ venue, lat, lng, municipality }) => {
         const fee = municipality ? getDeliveryFee(municipality) : null;
-         
-        console.log("LOG: Ano ang laman ng municipality?", municipality);   
-
+        
         if (fee === null) {
             setBookingDetails(prev => ({
                 ...prev,

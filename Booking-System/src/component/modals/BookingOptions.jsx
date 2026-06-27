@@ -5,12 +5,31 @@ import logo from "../../assets/images/Golden.png"
 import logo2 from "../../assets/images/Snoop.png"
 import logo3 from "../../assets/images/logo.jpg"
 
-export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt, bookedServices, disableServices = [] }) => {
+export const BookingOptions = ({ 
+    selectedDate, 
+    onClose, 
+    showReceipt, 
+    bookedServices, 
+    disableServices = [],
+    availableServices = [],
+    socket, 
+    currentUser 
+}) => {
+
     const [selected, setSelected] = useState("");
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [isChecking, setIsChecking] = useState(false); 
 
     const handleBackOptions = () => {
         setIsConfirmed(false);
+        if (selected && selectedDate.dateString) {
+            socket.emit('booking-cancelled', {
+                date: selectedDate.dateString,
+                service: selected,
+                userId: currentUser.id || currentUser.username
+            });
+        }
+        setSelected("");
     }
 
     const services = [
@@ -34,9 +53,43 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
         },
     ];
 
-
     const handleContinue = () => {
-        if (selected) setIsConfirmed(true);
+        if (!selected) return;
+        
+        setIsChecking(true);
+
+        socket.emit('check-availability', 
+            { 
+                date: selectedDate.dateString, 
+                service: selected, 
+                userId: currentUser.id || currentUser.username 
+            },
+            (response) => {
+                setIsChecking(false);
+                
+                if (response.available) {
+                    setIsConfirmed(true);
+                } else {
+                    alert(`❌ ${response.message}`);
+                    setSelected("");
+                }
+            }
+        );
+    };
+
+    // ✅ NEW: Close handler with cleanup
+    const handleClose = () => {
+        // Release temp booking if any
+        if (selected && selectedDate.dateString) {
+            socket.emit('booking-cancelled', {
+                date: selectedDate.dateString,
+                service: selected,
+                userId: currentUser.id || currentUser.username
+            });
+        }
+        setSelected("");
+        setIsConfirmed(false);
+        onClose();
     };
 
     return (
@@ -63,7 +116,7 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={onClose}
+                                    onClick={handleClose} // ✅ Updated
                                     className="text-gray-400 hover:text-gray-700 transition-colors"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,14 +127,35 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
 
                             {/* Body */}
                             <div className="px-5 py-4">
+                                {/* ✅ NEW: Loading indicator */}
+                                {isChecking && (
+                                    <div className="text-center py-4 mb-3 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                                        <p className="text-sm text-blue-600 mt-2">Checking availability...</p>
+                                    </div>
+                                )}
+
                                 <ul className="space-y-2">
                                     {services.map((svc, i) => {
                                         const isBooked = bookedServices?.has(svc.service);
-                                        // BAGO: Service-level unavailability galing sa Settings (under maintenance)
                                         const isDisabled = disableServices.includes(svc.service);
-                                        // Hindi pwedeng piliin kung booked na sa araw na ito, O naka-disable globally
-                                        const isUnselectable = isBooked || isDisabled;
+                                        const isAvailable = availableServices.includes(svc.service);
+                                        const hasConflict = !isAvailable && !isBooked && !isDisabled;
+                                        const isUnselectable = isBooked || isDisabled || !isAvailable || isChecking;
                                         const isCurrentSelected = selected === svc.service;
+
+                                        let badgeText = "";
+                                        let badgeColor = "";
+                                        if (isDisabled) {
+                                            badgeText = "Unavailable";
+                                            badgeColor = "bg-gray-600";
+                                        } else if (isBooked) {
+                                            badgeText = "Booked";
+                                            badgeColor = "bg-red-600";
+                                        } else if (hasConflict) {
+                                            badgeText = "⏳ Pending";
+                                            badgeColor = "bg-yellow-500";
+                                        }
 
                                         return (
                                             <li
@@ -89,11 +163,12 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                                 onClick={() => !isUnselectable && setSelected(svc.service)}
                                                 className={`
                                                     p-2 rounded-[10px] border transition-all duration-200
-                                                    ${isCurrentSelected
+                                                    ${isCurrentSelected && !isUnselectable
                                                         ? `${svc.selectedBg} ${svc.selectedText} font-bold border-[#1e1e1e]`
                                                         : "border-transparent hover:bg-gray-100"
                                                     }
                                                     ${isUnselectable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                                                    ${hasConflict ? "border-yellow-400 bg-yellow-50" : ""}
                                                 `}
                                             >
                                                 <div className="flex justify-between items-center">
@@ -105,15 +180,9 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                                         />
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-sm">{svc.service}</span>
-                                                            {/* BAGO: Unavailable badge, mas priority kaysa Booked badge */}
-                                                            {isDisabled && (
-                                                                <span className="bg-gray-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                                                                    Unavailable
-                                                                </span>
-                                                            )}
-                                                            {!isDisabled && isBooked && (
-                                                                <span className="bg-red-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                                                                    Booked
+                                                            {badgeText && (
+                                                                <span className={`${badgeColor} text-white text-[10px] font-semibold px-1.5 py-0.5 rounded`}>
+                                                                    {badgeText}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -136,16 +205,16 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
                                 <div className="flex gap-2 mt-4">
                                     <button
                                         className="flex-1 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-                                        onClick={onClose}
+                                        onClick={handleClose} // ✅ Updated
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         className="flex-1 py-2 text-sm font-medium rounded-lg bg-[#6184D8] text-white hover:bg-[#4f6ec0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={!selected}
+                                        disabled={!selected || isChecking}
                                         onClick={handleContinue}
                                     >
-                                        Continue
+                                        {isChecking ? "Checking..." : "Continue"}
                                     </button>
                                 </div>
                             </div>
@@ -158,8 +227,7 @@ export const BookingOptions = ({ selectedDate, addBooking, onClose, showReceipt,
             {isConfirmed && selected && (
                 <BookingModal
                     selectedDate={selectedDate}
-                    addBooking={addBooking}
-                    onClose={onClose}
+                    onClose={handleClose} // ✅ Updated
                     showReceipt={showReceipt}
                     serviceName={selected}
                     handleBackOptions={handleBackOptions}

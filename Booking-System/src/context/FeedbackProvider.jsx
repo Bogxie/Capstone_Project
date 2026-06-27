@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { FeedbackContext } from "./FeedbackContext";
 import { RatingSuccessModal } from "../component/modals/RatingSuccessModal";
+import { useBooking } from "./useBooking";
 
-export const FeedbackProvider = ({ children, bookings }) => {
+export const FeedbackProvider = ({ children }) => {
+
+    const { bookings } = useBooking();
     const [feedbacks, setFeedbacks] = useState([]);
     const [showSuccess, setShowSuccess] = useState(false);
     const [successBookID, setSuccessBookID] = useState(null);

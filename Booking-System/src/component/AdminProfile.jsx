@@ -2,9 +2,12 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { colorStatus } from '../assets/utils/colorStatus';
 import { formatCurrency } from '../assets/Utils/formatCurrency';
+import { useBooking } from '../context/useBooking';
 
-export const AdminProfile = ({ bookings }) => {
+export const AdminProfile = () => {
+
     const { currentUser } = useAuth();
+    const { bookings } = useBooking();
     if (!currentUser) return null;
 
     const stats = [

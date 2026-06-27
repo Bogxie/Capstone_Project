@@ -11,6 +11,7 @@ const adminLinks = [
     { to: "/AdminPage", label: "Bookings" },
     { to: "/UserPage", label: "My Bookings" },
     { to: "/AdminProfile", label: "Profile" },
+    { to: "/ManageUsers", label: "Manage Users" },
 ];
 
 const userLinks = [
@@ -73,12 +74,6 @@ export const Sidebar = ({ showSidebar, onClose }) => {
                             </NavLink>
                         </li>
                     ))}
-
-                    {currentUser.role === "Admin" && (
-                        <li className="text-center py-2 px-3 rounded bg-white/10 text-yellow-400 hover:bg-white/20 transition-colors cursor-pointer">
-                            Manage Users
-                        </li>
-                    )}
 
                     {sharedLinks.map((link) => (
                         <li key={link.to}>

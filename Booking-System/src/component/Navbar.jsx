@@ -31,30 +31,36 @@ export const Navbar = () => {
     useEffect(() => {
         if (location.pathname !== "/") return;
 
-        window.scrollTo(0, 0);
+        let observer;
 
-        const sections = document.querySelectorAll("#home, #calendar, #reviews");
-        if (!sections.length) return;
+        const observeSections = () => {
+            const sections = document.querySelectorAll("#home, #calendar, #reviews");
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setActiveSection(entry.target.id);
-                    }
-                });
-            },
-            {
-                threshold: 0.4,
-                rootMargin: "-80px 0px 0px 0px",
+            if (!sections.length) {
+                requestAnimationFrame(observeSections);
+                return;
             }
-        );
 
-        sections.forEach((section) => observer.observe(section));
+            observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            setActiveSection(entry.target.id);
+                        }
+                    });
+                },
+                {
+                    threshold: 0.4,
+                    rootMargin: "-80px 0px 0px 0px",
+                }
+            );
 
-        return () => {
-            observer.disconnect();
+            sections.forEach((section) => observer.observe(section));
         };
+
+        observeSections();
+
+        return () => observer?.disconnect();
     }, [location.pathname]);
 
     return (

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../context/useAuth.js";
+import { useBooking } from "../context/useBooking.js";
 import { UserDashboard } from "./UserDashboard.jsx";
 import { service } from '../assets/utils/services.js';
 import { service_config } from '../assets/utils/ServiceConfig.js';
+
 
 const themeMap = {
     "header-golden": "bg-[#F59E0B] text-black",
@@ -18,8 +20,10 @@ const tabs = [
     { key: "User-cancel", label: "Cancelled", color: "text-red-400", filter: (b) => b.status === 'Cancelled' },
 ];
 
-export const UserPage = ({ bookings, updateBooking }) => {
+export const UserPage = () => {
+
     const { currentUser } = useAuth();
+    const { bookings = [], updateBooking } = useBooking();
     const [activeTab, setActiveTab] = useState("User-all");
     const [selectedService, setSelectedService] = useState(null);
 

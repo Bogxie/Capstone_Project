@@ -1,8 +1,8 @@
-const onlineUsers = new Map();
+import { onlineUsers, getOnlineUsers } from "./sharedState.js";
 
 export const initChatSocket = (io) => {
     const broadcastUserList = () => {
-        io.to("admin-room").emit("user-list", Array.from(onlineUsers.keys()));
+        io.to("admin-room").emit("user-list", getOnlineUsers());
     };
 
     io.on("connection", (socket) => {

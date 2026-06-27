@@ -196,7 +196,7 @@ export const Settings = ({
                         {/* BAGONG SETTING ROW PARA SA ACTIVE/DISABLED SERVICES */}
                         <div className="flex justify-between items-center px-4 py-3">
                             <span className="text-white">Service Activation / Status</span>
-                            <button onClick={() => handleUpdate('services-status')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-500 text-black hover:bg-yellow-600 transition">Manage Status</button>
+                            <button onClick={() => handleUpdate('services-status')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-500 text-black hover:bg-yellow-600 transition">Manage</button>
                         </div>
 
                         <div className="flex justify-between items-center px-4 py-3">

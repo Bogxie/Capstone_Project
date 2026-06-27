@@ -47,7 +47,6 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
     };
 
     const handleSubmit = () => {
-        console.log("handleSubmit called!");
         const feedbackData = {
             bookID: booking.bookID,
             fullName: booking.fullName,
@@ -57,7 +56,6 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
             existingImages: previewUrl.filter(url => !url.startsWith('blob:')),
             newImages: selectedFiles
         };
-        console.log("2. Saving feedback...");
         saveFeedback(feedbackData);
         onClose();
     };

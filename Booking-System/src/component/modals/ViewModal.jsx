@@ -96,7 +96,6 @@ export const ViewModal = ({ booking, onClose }) => {
                                         initialLat={booking.lat || null} 
                                         initialLng={booking.lng || null}
                                         onLocationSelect={(locData) => {
-                                            // Optional: Kung gusto mong mapalitan ang details habang pinipindot sa view mode
                                             console.log("Selected coordinates inside modal:", locData);
                                         }}
                                     />
