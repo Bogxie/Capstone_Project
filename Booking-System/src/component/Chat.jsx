@@ -1,3 +1,4 @@
+// Chat.jsx
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/useAuth";
 
@@ -11,7 +12,6 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
     const [lastActivity, setLastActivity] = useState({});
 
     const bottomRef = useRef(null);
-
     const isAdmin = currentUser?.role === "Admin";
     const needsUserSelection = isAdmin && !selectedUser;
 
@@ -23,9 +23,14 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
     useEffect(() => {
         if (!currentUser) return;
 
+        const token = localStorage.getItem('token');
+
+        console.log("🟢 Chat: Sending register with token:", token ? "YES" : "NO");
+
         socket.emit("register", {
             username: currentUser.username,
             role: currentUser.role,
+            token: token 
         });
 
         if (currentUser.role === "Admin") {
@@ -40,7 +45,7 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
             const conversationKey = currentUser.role === "Admin" ? from : "Admin";
             const timestamp = new Date().toISOString();
 
-            setIsVisible(true);// Dagdag na timestamp para sa pumasok na chat
+            setIsVisible(true);
 
             if (currentUser.role === "Admin" && sender === "user") {
                 if (!selectedUserRef.current) {
@@ -156,22 +161,22 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
     };
 
     return (
-        <div className={`fixed bottom-20 right-4 h-96 bg-[#1e1e1e] border border-gray-700 rounded-xl shadow-2xl flex z-[200] overflow-hidden text-white transition-all duration-300 ${isAdmin ? "w-96" : "w-72"
-            }`}>
+        <div className={`fixed bottom-20 right-4 h-96 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex z-[200] overflow-hidden text-white transition-all duration-300 ${isAdmin ? "w-96" : "w-72"}`}>
             {isAdmin && (
-                <div className="w-28 bg-black border-r border-gray-700 hide-scrollbar overflow-y-auto flex-shrink-0">
-                    <p className="text-[10px] text-gray-400 p-1.5 font-bold text-center border-b border-gray-800">ONLINE</p>
+                <div className="w-28 bg-zinc-950 border-r border-zinc-700 hide-scrollbar overflow-y-auto flex-shrink-0">
+                    <p className="text-[10px] text-lime-400 p-1.5 font-bold text-center border-b border-zinc-700">ONLINE</p>
                     {sortedUserList.length === 0 ? (
-                        <p className="text-gray-500 text-[11px] text-center p-2">No users</p>
+                        <p className="text-zinc-500 text-[11px] text-center p-2">No users</p>
                     ) : (
                         sortedUserList.map((user) => (
                             <button
                                 key={user}
                                 onClick={() => handleSelectUser(user)}
-                                className={`relative w-full px-2 py-2.5 text-[11px] truncate transition-colors text-center ${selectedUser === user
-                                        ? "bg-yellow-400 text-black font-bold"
-                                        : "text-yellow-400 hover:bg-white/10"
-                                    }`}
+                                className={`relative w-full px-2 py-2.5 text-[11px] truncate transition-colors text-center ${
+                                    selectedUser === user
+                                        ? "bg-lime-500 text-black font-bold"
+                                        : "text-lime-400 hover:bg-zinc-800"
+                                }`}
                             >
                                 👤 {user}
                                 {unreadCounts[user] > 0 && (
@@ -183,9 +188,8 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                 </div>
             )}
 
-            {/* Chat Body */}
-            <div className="flex-1 flex flex-col bg-[#1e1e1e]">
-                <div className="bg-[#212529] text-yellow-400 text-sm font-bold px-3 py-2 border-b border-gray-700 flex justify-between items-center">
+            <div className="flex-1 flex flex-col bg-zinc-900">
+                <div className="bg-zinc-800 text-lime-400 text-sm font-bold px-3 py-2 border-b border-zinc-700 flex justify-between items-center">
                     <span>
                         {isAdmin
                             ? selectedUser
@@ -195,7 +199,7 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                     </span>
                     <button
                         onClick={() => setIsVisible(false)}
-                        className="text-gray-400 hover:text-white text-xs"
+                        className="text-zinc-400 hover:text-white text-xs"
                     >
                         ✕
                     </button>
@@ -203,7 +207,7 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-3 flex flex-col hide-scrollbar">
                     {needsUserSelection ? (
-                        <p className="text-gray-500 text-xs text-center my-auto">Choose users to reply</p>
+                        <p className="text-zinc-500 text-xs text-center my-auto">Choose users to reply</p>
                     ) : (
                         activeMessages.map((msg, index) => {
                             const isMyMessage = (isAdmin && msg.sender === "Admin") || (!isAdmin && msg.sender === "user");
@@ -211,24 +215,28 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                             return (
                                 <div
                                     key={index}
-                                    className={`flex flex-col max-w-[75%] ${isMyMessage ? "align-self-end ml-auto items-end" : "align-self-start mr-auto items-start"
-                                        }`}
+                                    className={`flex flex-col max-w-[75%] ${
+                                        isMyMessage 
+                                            ? "align-self-end ml-auto items-end" 
+                                            : "align-self-start mr-auto items-start"
+                                    }`}
                                 >
                                     {!isMyMessage && (
-                                        <span className="text-[10px] text-gray-400 mb-0.5 ml-1 font-semibold">
+                                        <span className="text-[10px] text-zinc-400 mb-0.5 ml-1 font-semibold">
                                             {msg.senderName || (isAdmin ? "User" : "Admin")}
                                         </span>
                                     )}
 
                                     <div
-                                        className={`px-3 py-2 rounded-lg text-xs break-words ${isMyMessage
-                                                ? "bg-yellow-400 text-black rounded-tr-none"
-                                                : "bg-white/10 text-white rounded-tl-none"
-                                            }`}
+                                        className={`px-3 py-2 rounded-lg text-xs break-words ${
+                                            isMyMessage
+                                                ? "bg-lime-500 text-black rounded-tr-none"
+                                                : "bg-zinc-800 text-white rounded-tl-none"
+                                        }`}
                                     >
                                         {msg.message}
                                     </div>
-                                    <span className="text-[9px] text-gray-500 mt-0.5 px-1">
+                                    <span className="text-[9px] text-zinc-500 mt-0.5 px-1">
                                         {formatTime(msg.timestamp)}
                                     </span>
                                 </div>
@@ -238,19 +246,19 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                     <div ref={bottomRef} />
                 </div>
 
-                <form onSubmit={handleSend} className="flex gap-2 p-2 border-t border-gray-700 bg-[#1e1e1e]">
+                <form onSubmit={handleSend} className="flex gap-2 p-2 border-t border-zinc-700 bg-zinc-900">
                     <input
                         type="text"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type message..."
                         disabled={needsUserSelection}
-                        className="flex-1 min-w-0 bg-black border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400"
+                        className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-lime-500"
                     />
                     <button
                         type="submit"
                         disabled={needsUserSelection}
-                        className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-bold rounded-lg disabled:opacity-50 transition-colors shrink-0"
+                        className="px-3 py-1.5 bg-lime-500 hover:bg-lime-400 text-black text-xs font-bold rounded-lg disabled:opacity-50 transition-colors shrink-0"
                     >
                         ➤
                     </button>

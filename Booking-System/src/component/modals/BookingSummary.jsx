@@ -1,5 +1,20 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { formatCurrency } from '../../assets/Utils/formatCurrency.js'
+
+const QRCodeDisplay = ({ merchantName }) => (
+    <div className="bg-white p-4 rounded-lg flex flex-col items-center justify-center">
+        <div className="w-36 h-32 bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400">
+            <div className="text-center">
+                <span className="text-4xl">📱</span>
+                <p className="text-xs text-gray-500 mt-0.5">QR Code</p>
+            </div>
+        </div>
+        <div className="mt-2 text-center w-full">
+            <p className="text-sm text-gray-600 font-bold">GCash: 09123456789</p>
+            <p className="text-sm text-gray-500">{merchantName}</p>
+        </div>
+    </div>
+);
 
 export const BookingSummaryModal = ({
     bookingDetails,
@@ -9,47 +24,32 @@ export const BookingSummaryModal = ({
     setTermsAccepted,
     setShowTerms,
 }) => {
-    const [showGcashMock, setShowGcashMock] = useState(false);
-    const [gcashStep, setGcashStep] = useState(1);
-    const [gcashNumber, setGcashNumber] = useState("");
-    const [pin, setPin] = useState(["", "", "", ""]);
+    const [showQR, setShowQR] = useState(false);
+    const [paymentStep, setPaymentStep] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
     const Merchant_name = 'Lime Serenity';
 
-    const pinRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+    const handleCheckBox = (e) => setTermsAccepted(e.target.checked);
 
-    const handlePinChange = (index, value) => {
-        if (!/^[0-9]?$/.test(value)) return;
-        const newPin = [...pin];
-        newPin[index] = value;
-        setPin(newPin);
-        if (value && index < 3) {
-            pinRefs[index + 1].current?.focus();
-        }
-    };
-
-    const handlePinSubmit = () => {
-        if (pin.some(p => p === "")) return;
+    const handleQRPayment = () => {
         setIsProcessing(true);
-        setGcashStep(3);
+        setPaymentStep(2);
+        
         setTimeout(() => {
             setIsProcessing(false);
-            setGcashStep(4);
+            setPaymentStep(3);
         }, 3000);
     };
-
-    const handleCheckBox = (e) => setTermsAccepted(e.target.checked);
 
     const tdClass = "border border-[#6184D8] text-white bg-[#1e1e1e] px-2 py-1 text-sm";
     const thClass = "border border-[#6184D8] text-white bg-[#1e1e1e] px-2 py-1 text-sm font-bold whitespace-nowrap";
 
     return (
         <>
-            {!showGcashMock ? (
+            {!showQR ? (
                 <div>
                     <h6 className="text-center mb-2 font-bold text-sm">STEP 2 OF 3 - SECURE DATE</h6>
 
-                    {/* Summary Card */}
                     <div className="bg-[#1e1e1e] rounded-lg p-2 mb-1 border border-gray-600">
                         <h5 className="text-center my-2 text-[#6184D8] font-semibold text-sm [font-variant:small-caps] border-b border-[#6184D8] pb-1">
                             Booking Summary
@@ -67,6 +67,8 @@ export const BookingSummaryModal = ({
                                     ["🚚 Delivery Fee", `${bookingDetails.municipality} (₱ ${formatCurrency(bookingDetails.deliveryFee)})`],
                                     ["🧾 Tax", `₱ ${formatCurrency(bookingDetails.tax)}`],
                                     ["💳 Total", `₱ ${formatCurrency(bookingDetails.total)}`],
+                                    ["💰 Downpayment", `₱ ${formatCurrency(bookingDetails.downpayment || 1000)}`],
+                                    ["💵 Remaining", `₱ ${formatCurrency(bookingDetails.remainingBalance || bookingDetails.total - 1000)}`],
                                 ].map(([label, value]) => (
                                     <tr key={label}>
                                         <th className={thClass}>{label}</th>
@@ -77,7 +79,6 @@ export const BookingSummaryModal = ({
                         </table>
                     </div>
 
-                    {/* Terms Checkbox */}
                     <div className="flex items-center gap-2 my-3">
                         <input
                             type="checkbox"
@@ -87,7 +88,7 @@ export const BookingSummaryModal = ({
                             className="w-4 h-4 accent-[#6184D8] cursor-pointer"
                             required
                         />
-                        <label htmlFor="terms" className="text-sm text-black cursor-pointer">
+                        <label htmlFor="terms" className="text-sm text-lime-400 cursor-pointer">
                             I agree to the{" "}
                             <button
                                 className="text-blue-600 underline hover:text-blue-800 transition-colors p-0"
@@ -98,7 +99,6 @@ export const BookingSummaryModal = ({
                         </label>
                     </div>
 
-                    {/* Buttons */}
                     <div className="flex gap-1">
                         <button
                             type="button"
@@ -110,99 +110,76 @@ export const BookingSummaryModal = ({
                         <button
                             type="button"
                             className="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={() => setShowGcashMock(true)}
+                            onClick={() => setShowQR(true)}
                             disabled={!isTermsAccepted}
                         >
-                            Pay Downpayment ₱1,000
+                            Pay Downpayment ₱{formatCurrency(bookingDetails.downpayment || 1000)}
                         </button>
                     </div>
                 </div>
 
             ) : (
-                /* GCash Mock */
-                <div className="bg-[#007bff] rounded-lg p-5 min-h-[350px] shadow-lg">
-
-                    {/* GCash Header */}
-                    <div className="flex items-center mb-6">
-                        <div className="bg-white text-blue-600 font-bold px-2 rounded text-base">G</div>
-                        <span className="text-white font-bold ml-2 tracking-wider">Cash</span>
-                        <span className="ml-auto text-white/50 text-sm">Pay Bill</span>
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-5">
+                    <div className="flex items-center mb-3">
+                        <div className="bg-white text-blue-600 font-bold px-2.5 py-0.5 rounded text-sm">G</div>
+                        <span className="text-white font-bold ml-2 text-base tracking-wider">Cash</span>
+                        <span className="ml-auto text-white/50 text-xs">Pay Bill</span>
                     </div>
 
-                    {/* Step 1 — Enter Number */}
-                    {gcashStep === 1 && (
+                    {paymentStep === 1 && (
                         <div>
-                            <p className="text-white text-sm text-center mb-1">Amount to Pay</p>
-                            <h3 className="text-white text-center text-2xl font-bold mb-4">₱1,000.00</h3>
-                            <input
-                                type="tel"
-                                className="w-full text-center font-bold rounded-[10px] h-[50px] text-xl px-3 mb-3 border-0 outline-none"
-                                placeholder="09XXXXXXXXX"
-                                maxLength={11}
-                                value={gcashNumber}
-                                onChange={(e) => setGcashNumber(e.target.value.replace(/[^0-9]/g, ""))}
-                            />
+                            <p className="text-white text-sm text-center mb-1">Scan to Pay</p>
+                            <h3 className="text-white text-center text-2xl font-bold mb-3">
+                                ₱{formatCurrency(bookingDetails.downpayment || 1000)}
+                            </h3>
+                            
+                            <QRCodeDisplay merchantName={Merchant_name} />
+                            
+                            <p className="text-white/70 text-sm text-center mt-2">
+                                Scan QR code using GCash app to pay downpayment
+                            </p>
+                            
                             <button
-                                className="w-full bg-white text-blue-600 font-bold py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={gcashNumber.length !== 11}
-                                onClick={() => setGcashStep(2)}
+                                className="w-full bg-white text-blue-600 font-bold py-2.5 text-sm rounded-lg hover:bg-gray-100 transition-colors mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleQRPayment}
+                                disabled={isProcessing}
                             >
-                                Next
+                                {isProcessing ? 'Processing...' : "I've Paid ✓"}
                             </button>
+                            
                             <button
-                                className="w-full text-white/50 text-sm mt-2 py-1 hover:text-white transition-colors"
-                                onClick={() => setShowGcashMock(false)}
+                                className="w-full text-white/50 text-sm mt-1.5 py-1 hover:text-white transition-colors"
+                                onClick={() => {
+                                    setShowQR(false);
+                                    setPaymentStep(1);
+                                    setIsProcessing(false);
+                                }}
                             >
                                 Cancel Payment
                             </button>
                         </div>
                     )}
 
-                    {/* Step 2 — PIN */}
-                    {gcashStep === 2 && (
-                        <div className="text-center">
-                            <p className="text-white text-sm font-bold mb-3">Enter 4-digit MPIN</p>
-                            <div className="flex justify-center gap-2 mb-4">
-                                {pin.map((p, i) => (
-                                    <input
-                                        key={i}
-                                        ref={pinRefs[i]}
-                                        type="password"
-                                        maxLength={1}
-                                        className="w-[50px] h-[50px] text-center font-bold text-2xl bordered rounded-lg border-0 outline-none"
-                                        value={p}
-                                        onChange={(e) => handlePinChange(i, e.target.value)}
-                                    />
-                                ))}
-                            </div>
-                            <button
-                                className="w-full bg-white text-blue-600 font-bold py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={pin.some(p => p === "") || isProcessing}
-                                onClick={handlePinSubmit}
-                            >
-                                Confirm Pay ₱1,000
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Step 3 — Processing */}
-                    {gcashStep === 3 && (
+                    {paymentStep === 2 && (
                         <div className="text-center py-10">
-                            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                            <p className="text-white font-bold">Processing...</p>
+                            <div className="w-14 h-14 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                            <p className="text-white font-bold text-base">Verifying Payment...</p>
+                            <p className="text-white/50 text-sm mt-1">Please wait a moment</p>
                         </div>
                     )}
 
-                    {/* Step 4 — Success */}
-                    {gcashStep === 4 && (
+                    {paymentStep === 3 && (
                         <div className="text-center">
                             <div className="text-5xl mb-2">✅</div>
-                            <h5 className="text-white font-bold text-lg">Payment Success!</h5>
-                            <p className="text-white/50 text-sm px-3">
-                                Downpayment of ₱1,000.00 sent to {Merchant_name}.
+                            <h5 className="text-white font-bold text-lg">Payment Confirmed!</h5>
+                            <p className="text-white/70 text-sm px-2">
+                                Downpayment of ₱{formatCurrency(bookingDetails.downpayment || 1000)} verified.
                             </p>
+                            <div className="bg-green-500/20 border border-green-400/30 text-green-300 text-sm p-2 rounded-lg mt-3">
+                                💡 Remaining balance: ₱{formatCurrency(bookingDetails.remainingBalance || bookingDetails.total - 1000)}
+                            </div>
                             <button
-                                className="w-full bg-white text-blue-600 font-bold mt-3 py-2 rounded-lg hover:bg-gray-100 transition-colors shadow"
+                                className="w-full bg-white text-blue-600 font-bold mt-3 py-2.5 text-sm rounded-lg hover:bg-gray-100 transition-colors shadow"
                                 onClick={onNext}
                             >
                                 Next: Payment Method →

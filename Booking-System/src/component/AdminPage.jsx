@@ -1,3 +1,4 @@
+// component/AdminPage.jsx
 import { useState, useMemo } from "react";
 import { AdminDashboard } from "./AdminDashboard";
 import { service } from '../assets/utils/services.js'
@@ -8,41 +9,40 @@ import { useBooking } from "../context/useBooking.js";
 const themeMap = {
     "header-golden": "bg-[#F59E0B] text-black",
     "header-snoop": "bg-[#92400E] text-white",
-    "header-projector": "bg-[#1E293B] text-white",
+    "header-projector": "bg-[#06B6D4] text-white",
 };
 
 const tabs = [
     { key: "All", label: "All", color: "text-blue-400", filter: () => true },
     { key: "Pending", label: "Pending", color: "text-yellow-400", filter: (b) => b.status === 'Pending' },
     { key: "Confirm", label: "Confirmed", color: "text-cyan-400", filter: (b) => b.status === 'Confirmed' },
-    { key: "Complete", label: "Completed", color: "text-green-400", filter: (b) => b.status === 'Complete' },
+    { key: "Complete", label: "Completed", color: "text-green-400", filter: (b) => b.status === 'Completed' },
     { key: "Cancel", label: "Cancelled", color: "text-red-400", filter: (b) => b.status === 'Cancelled' },
 ];
 
 export const AdminPage = () => {
-
     const { bookings, updateBooking } = useBooking();
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState("All");
     const [selectedService, setSelectedService] = useState(null);
-
+    
     const sortedBookings = useMemo(() => {
         return [...bookings].sort((a, b) => {
-            const idA = parseInt(a.bookID.split('-')[1]);
-            const idB = parseInt(b.bookID.split('-')[1]);
+            const idA = a.booking_id || parseInt(a.bookID?.split('-')[1] || 0);
+            const idB = b.booking_id || parseInt(b.bookID?.split('-')[1] || 0);
             return idB - idA;
         });
     }, [bookings]);
 
     const activeFilter = tabs.find(t => t.key === activeTab)?.filter || (() => true);
-
+    
     const filteredBookings = sortedBookings
         .filter(b => b.service === selectedService)
         .filter(activeFilter)
         .filter(booking => {
             const searchLower = search.trim().toLowerCase();
             return (
-                (booking.bookID || "").toLowerCase().includes(searchLower) ||
+                (booking.display_id || booking.bookID || "").toLowerCase().includes(searchLower) ||
                 (booking.venue || "").toLowerCase().includes(searchLower) ||
                 (booking.description || "").toLowerCase().includes(searchLower)
             );
@@ -51,14 +51,10 @@ export const AdminPage = () => {
     return (
         <>
             <title>Admin Dashboard</title>
-
-            {/* Mobile sidebar toggle */}
-
             <div className="max-w-4xl mx-auto">
 
-                {!selectedService && <RevenueReport bookings={bookings} /> }
-                
-                
+                {!selectedService && <RevenueReport bookings={bookings} />}
+
                 {/* Service Cards */}
                 {!selectedService && (
                     <div className="grid grid-cols-3 gap-3 my-3">
@@ -136,8 +132,8 @@ export const AdminPage = () => {
                                         type="button"
                                         onClick={() => setActiveTab(tab.key)}
                                         className={`flex-1 py-2 text-xs font-semibold transition-colors ${tab.color} ${activeTab === tab.key
-                                                ? "border-b-2 border-current bg-white/5"
-                                                : "hover:bg-white/5"
+                                            ? "border-b-2 border-current bg-white/5"
+                                            : "hover:bg-white/5"
                                             }`}
                                     >
                                         {tab.label}
@@ -145,7 +141,7 @@ export const AdminPage = () => {
                                 ))}
                             </div>
 
-                            {/* Booking List — scrollable, walang scrollbar */}
+                            {/* Booking List */}
                             <div
                                 className="p-3"
                                 style={{
@@ -158,14 +154,13 @@ export const AdminPage = () => {
                                 <AdminDashboard
                                     key={activeTab + search + selectedService}
                                     bookings={filteredBookings}
-                                    UpdateBooking={updateBooking}
+                                    updateBooking={updateBooking}  
                                 />
                             </div>
                         </div>
                     </>
                 )}
             </div>
-
         </>
-    );
+    );  
 };

@@ -1,3 +1,4 @@
+// component/HelpSupport.jsx
 import { useState } from "react";
 import { useAuth } from "../context/useAuth";
 
@@ -71,25 +72,25 @@ export const HelpSupport = () => {
         <>
             <title>Help & Support</title>
 
-            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Help & Support</h2>
+            <h2 className="text-2xl font-bold text-lime-600 dark:text-lime-400 mb-4">Help & Support</h2>
 
             {/* FAQ */}
-            <div className="bg-gray-900 border border-yellow-500 rounded-lg overflow-hidden mb-6">
-                <div className="bg-black text-yellow-400 px-4 py-3 font-semibold">
+            <div className="bg-bg-card border border-border rounded-lg overflow-hidden mb-6">
+                <div className="bg-bg-header text-lime-600 dark:text-lime-400 px-4 py-3 font-semibold border-b border-border">
                     Frequently Asked Questions
                 </div>
-                <div className="divide-y divide-gray-700">
+                <div className="divide-y divide-border">
                     {faqItems.map((item, i) => (
                         <div key={i}>
                             <button
                                 onClick={() => toggleFaq(i)}
-                                className="w-full flex justify-between items-center px-4 py-3 text-left text-sm font-semibold text-white hover:bg-white/5 transition-colors"
+                                className="w-full flex justify-between items-center px-4 py-3 text-left text-sm font-semibold text-text-primary hover:bg-bg-hover transition-colors"
                             >
                                 {item.question}
-                                <span className="text-yellow-400 ml-2">{openIndex === i ? "−" : "+"}</span>
+                                <span className="text-lime-500 dark:text-lime-400 ml-2 text-lg">{openIndex === i ? "−" : "+"}</span>
                             </button>
                             {openIndex === i && (
-                                <div className="px-4 pb-3 text-sm text-gray-400">
+                                <div className="px-4 pb-3 text-sm text-text-secondary">
                                     {item.answer}
                                 </div>
                             )}
@@ -99,20 +100,20 @@ export const HelpSupport = () => {
             </div>
 
             {/* Contact Support */}
-            <div className="bg-gray-900 border border-yellow-500 rounded-lg overflow-hidden mb-6">
-                <div className="bg-black text-yellow-400 px-4 py-3 font-semibold">
+            <div className="bg-bg-card border border-border rounded-lg overflow-hidden mb-6">
+                <div className="bg-bg-header text-lime-600 dark:text-lime-400 px-4 py-3 font-semibold border-b border-border">
                     Contact Support
                 </div>
                 <div className="p-4 flex flex-col sm:flex-row gap-3">
                     <a
                         href="mailto:support@limeserenity.com"
-                        className="flex-1 flex items-center gap-2 bg-black border border-gray-700 rounded-lg px-4 py-3 text-sm text-white hover:border-yellow-500 transition-colors"
+                        className="flex-1 flex items-center gap-2 bg-bg-secondary border border-border rounded-lg px-4 py-3 text-sm text-text-primary hover:border-lime-500 transition-colors"
                     >
                         📧 <span>support@limeserenity.com</span>
                     </a>
                     <a
                         href="tel:09123456789"
-                        className="flex-1 flex items-center gap-2 bg-black border border-gray-700 rounded-lg px-4 py-3 text-sm text-white hover:border-yellow-500 transition-colors"
+                        className="flex-1 flex items-center gap-2 bg-bg-secondary border border-border rounded-lg px-4 py-3 text-sm text-text-primary hover:border-lime-500 transition-colors"
                     >
                         📞 <span>0912-345-6789</span>
                     </a>
@@ -120,8 +121,8 @@ export const HelpSupport = () => {
             </div>
 
             {/* Report a Bug */}
-            <div className="bg-gray-900 border border-yellow-500 rounded-lg overflow-hidden">
-                <div className="bg-black text-yellow-400 px-4 py-3 font-semibold">
+            <div className="bg-bg-card border border-border rounded-lg overflow-hidden">
+                <div className="bg-bg-header text-lime-600 dark:text-lime-400 px-4 py-3 font-semibold border-b border-border">
                     Report a Bug or Issue
                 </div>
                 <form onSubmit={handleSubmitBug} className="p-4">
@@ -130,12 +131,12 @@ export const HelpSupport = () => {
                         onChange={(e) => setBugReport(e.target.value)}
                         placeholder="Describe the issue or suggestion..."
                         rows={4}
-                        className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                        className="w-full bg-bg-input border border-border rounded-lg p-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 resize-none"
                     />
                     <button
                         type="submit"
                         disabled={!bugReport.trim()}
-                        className="mt-3 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-sm rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="mt-3 px-4 py-2 bg-lime-500 hover:bg-lime-400 text-black font-semibold text-sm rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Submit Report
                     </button>

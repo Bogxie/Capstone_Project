@@ -29,7 +29,7 @@ export const UserButtons = ({ status, hasRated, handleCancellation, handleEdit, 
                     <button className={btnDisabled} disabled>Cancel</button>
                 </BtnGroup>
             );
-        case 'Complete':
+        case 'Completed':
             return (
                 <BtnGroup>
                     <button className={btnDisabled} disabled>Edit</button>

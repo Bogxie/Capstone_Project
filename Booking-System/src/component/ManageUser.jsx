@@ -1,45 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export const ManageUsers = () => {
-    const [users, setUsers] = useState([
-        { 
-            id: 1, 
-            username: "Admin", 
-            email: "admin@example.com", 
-            role: "Admin", 
-            status: "Active",
-            profile: "https://via.placeholder.com/40",
-            joinedDate: "2024-01-15"
-        },
-        { 
-            id: 2, 
-            username: "JohnDoe", 
-            email: "john@example.com", 
-            role: "User", 
-            status: "Active",
-            profile: "https://via.placeholder.com/40",
-            joinedDate: "2024-02-20"
-        },
-        { 
-            id: 3, 
-            username: "JaneSmith", 
-            email: "jane@example.com", 
-            role: "User", 
-            status: "Inactive",
-            profile: "https://via.placeholder.com/40",
-            joinedDate: "2024-03-10"
-        },
-        { 
-            id: 4, 
-            username: "MikeJohnson", 
-            email: "mike@example.com", 
-            role: "User", 
-            status: "Active",
-            profile: "https://via.placeholder.com/40",
-            joinedDate: "2024-04-05"
-        },
-    ]);
-
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRole, setFilterRole] = useState("All");
     const [showEditModal, setShowEditModal] = useState(false);
@@ -60,18 +24,34 @@ export const ManageUsers = () => {
         role: "User",
         status: "Active"
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const API_URL = 'http://localhost:3001/api';
+
+    const fetchUsers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/users`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setUsers(response.data);
+        } catch (err) {
+            console.error('Error fetching users:', err);
+            setUsers([]);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = filterRole === "All" || user.role === filterRole;
         return matchesSearch && matchesRole;
     });
-
-    const showSuccessMessage = (message) => {
-        setSuccessMessage(message);
-        setTimeout(() => setSuccessMessage(""), 3000);
-    };
 
     const handleEditClick = (user) => {
         setSelectedUser(user);
@@ -79,20 +59,39 @@ export const ManageUsers = () => {
             username: user.username,
             email: user.email,
             role: user.role,
-            status: user.status
+            status: user.status || "Active"
         });
         setShowEditModal(true);
     };
 
-    const handleEditSubmit = (e) => {
+    const handleEditSubmit = async (e) => {
         e.preventDefault();
-        setUsers(prev => prev.map(user => 
-            user.id === selectedUser.id 
-                ? { ...user, ...editFormData }
-                : user
-        ));
-        setShowEditModal(false);
-        showSuccessMessage(`✅ User ${editFormData.username} updated successfully!`);
+        setIsSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                `${API_URL}/users/${selectedUser.id}`,
+                editFormData,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                const updatedUsers = users.map(user =>
+                    user.id === selectedUser.id
+                        ? { ...user, ...editFormData }
+                        : user
+                );
+                setUsers(updatedUsers);
+                setShowEditModal(false);
+                setSuccessMessage(`✅ User ${editFormData.username} updated successfully!`);
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
+        } catch (err) {
+            console.error('Error updating user:', err);
+            alert('Failed to update user. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDeleteClick = (user) => {
@@ -100,27 +99,54 @@ export const ManageUsers = () => {
         setShowDeleteModal(true);
     };
 
-    const handleDeleteConfirm = () => {
-        setUsers(prev => prev.filter(user => user.id !== selectedUser.id));
-        setShowDeleteModal(false);
-        showSuccessMessage(`✅ User ${selectedUser.username} deleted successfully!`);
+    const handleDeleteConfirm = async () => {
+        setIsSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.delete(
+                `${API_URL}/users/${selectedUser.id}`,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                const updatedUsers = users.filter(user => user.id !== selectedUser.id);
+                setUsers(updatedUsers);
+                setShowDeleteModal(false);
+                setSuccessMessage(`✅ User ${selectedUser.username} deleted successfully!`);
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
+        } catch (err) {
+            console.error('Error deleting user:', err);
+            alert('Failed to delete user. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleAddUser = (e) => {
+    const handleAddUser = async (e) => {
         e.preventDefault();
-        const newUser = {
-            id: Date.now(),
-            username: newUserData.username,
-            email: newUserData.email,
-            role: newUserData.role,
-            status: newUserData.status,
-            profile: "https://via.placeholder.com/40",
-            joinedDate: new Date().toISOString().split('T')[0]
-        };
-        setUsers(prev => [...prev, newUser]);
-        setShowAddModal(false);
-        setNewUserData({ username: "", email: "", password: "", role: "User", status: "Active" });
-        showSuccessMessage(`✅ New user ${newUser.username} added successfully!`);
+        setIsSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                `${API_URL}/users`,
+                newUserData,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                setUsers([...users, response.data.user]);
+                setShowAddModal(false);
+                setNewUserData({ username: "", email: "", password: "", role: "User", status: "Active" });
+                setSuccessMessage(`✅ New user ${response.data.user.username} added successfully!`);
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
+        } catch (err) {
+            console.error('Error adding user:', err);
+            alert('Failed to add user. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -132,14 +158,25 @@ export const ManageUsers = () => {
         return styles[status] || styles.Active;
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                    <div className="h-8 w-8 border-4 border-lime-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-text-secondary text-sm">Loading users...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-2 sm:p-4">
-            {/* Header - Responsive */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-yellow-400">Manage Users</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-lime-600 dark:text-lime-400">Manage Users</h2>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="w-full sm:w-auto px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition text-sm sm:text-base"
+                    className="w-full sm:w-auto px-4 py-2 bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg transition text-sm sm:text-base"
                 >
                     ➕ Add User
                 </button>
@@ -152,19 +189,19 @@ export const ManageUsers = () => {
                 </div>
             )}
 
-            {/* Search and Filter - Responsive */}
+            {/* Search and Filter */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <input
                     type="text"
                     placeholder="🔍 Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none text-sm"
+                    className="w-full px-3 sm:px-4 py-2 bg-bg-input border border-border rounded-lg text-text-primary placeholder-text-muted focus:border-lime-500 focus:outline-none text-sm"
                 />
                 <select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
-                    className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                 >
                     <option value="All">All Roles</option>
                     <option value="Admin">Admin</option>
@@ -172,44 +209,43 @@ export const ManageUsers = () => {
                 </select>
             </div>
 
-            {/* Users Table - Responsive */}
-            <div className="bg-gray-900 border border-yellow-500/30 rounded-xl overflow-hidden">
-                {/* Mobile Card View - visible on small screens */}
-                <div className="block sm:hidden divide-y divide-gray-800">
+            {/* Users Table */}
+            <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+                {/* Mobile View */}
+                <div className="block sm:hidden divide-y divide-border">
                     {filteredUsers.length > 0 ? (
                         filteredUsers.map((user) => (
-                            <div key={user.id} className="p-4 hover:bg-gray-800/50 transition">
+                            <div key={user.id} className="p-4 hover:bg-bg-hover transition">
                                 <div className="flex items-center gap-3 mb-2">
                                     <img
-                                        src={user.profile}
+                                        src={user.profile || "https://via.placeholder.com/40"}
                                         alt={user.username}
-                                        className="w-10 h-10 rounded-full border border-yellow-400/30"
+                                        className="w-10 h-10 rounded-full border border-lime-500/30"
                                     />
                                     <div className="flex-1">
-                                        <div className="text-white font-medium">{user.username}</div>
-                                        <div className="text-gray-400 text-xs">{user.email}</div>
+                                        <div className="text-text-primary font-medium">{user.username}</div>
+                                        <div className="text-text-secondary text-xs">{user.email}</div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div>
-                                        <span className="text-gray-500">Role:</span>
-                                        <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${
-                                            user.role === "Admin" 
-                                                ? "bg-purple-500/20 text-purple-400" 
-                                                : "bg-blue-500/20 text-blue-400"
-                                        }`}>
+                                        <span className="text-text-muted">Role:</span>
+                                        <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${user.role === "Admin"
+                                            ? "bg-purple-500/20 text-purple-400"
+                                            : "bg-blue-500/20 text-blue-400"
+                                            }`}>
                                             {user.role}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-gray-500">Status:</span>
+                                        <span className="text-text-muted">Status:</span>
                                         <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(user.status)}`}>
                                             {user.status}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-gray-500">Joined:</span>
-                                        <span className="ml-1 text-gray-400">{user.joinedDate}</span>
+                                        <span className="text-text-muted">Joined:</span>
+                                        <span className="ml-1 text-text-secondary">{user.joinedDate || 'N/A'}</span>
                                     </div>
                                     <div className="flex gap-1 justify-end">
                                         <button
@@ -229,16 +265,16 @@ export const ManageUsers = () => {
                             </div>
                         ))
                     ) : (
-                        <div className="px-4 py-8 text-center text-gray-400 text-sm">
+                        <div className="px-4 py-8 text-center text-text-muted text-sm">
                             No users found matching your criteria.
                         </div>
                     )}
                 </div>
 
-                {/* Desktop Table View - hidden on small screens */}
+                {/* Desktop View */}
                 <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-black text-yellow-400">
+                        <thead className="bg-bg-header text-text-secondary border-b border-border">
                             <tr>
                                 <th className="px-4 py-3 text-left">User</th>
                                 <th className="px-4 py-3 text-left">Email</th>
@@ -248,27 +284,26 @@ export const ManageUsers = () => {
                                 <th className="px-4 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
+                        <tbody className="divide-y divide-border">
                             {filteredUsers.length > 0 ? (
                                 filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-800/50 transition">
+                                    <tr key={user.id} className="hover:bg-bg-hover transition">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
                                                 <img
-                                                    src={user.profile}
+                                                    src={user.profile || "https://via.placeholder.com/40"}
                                                     alt={user.username}
-                                                    className="w-8 h-8 rounded-full border border-yellow-400/30"
+                                                    className="w-8 h-8 rounded-full border border-lime-500/30"
                                                 />
-                                                <span className="text-white font-medium">{user.username}</span>
+                                                <span className="text-text-primary font-medium">{user.username}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-gray-300">{user.email}</td>
+                                        <td className="px-4 py-3 text-text-secondary">{user.email}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                                user.role === "Admin" 
-                                                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" 
-                                                    : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                            }`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${user.role === "Admin"
+                                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                                : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                                }`}>
                                                 {user.role}
                                             </span>
                                         </td>
@@ -277,7 +312,7 @@ export const ManageUsers = () => {
                                                 {user.status}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-gray-400 text-xs">{user.joinedDate}</td>
+                                        <td className="px-4 py-3 text-text-muted text-xs">{user.joinedDate || 'N/A'}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-center gap-2">
                                                 <button
@@ -298,7 +333,7 @@ export const ManageUsers = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
+                                    <td colSpan="6" className="px-4 py-8 text-center text-text-muted">
                                         No users found matching your criteria.
                                     </td>
                                 </tr>
@@ -308,57 +343,57 @@ export const ManageUsers = () => {
                 </div>
             </div>
 
-            {/* Stats - Responsive */}
-            <div className="mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                <span>Total: <strong className="text-white">{users.length}</strong></span>
+            {/* Stats */}
+            <div className="mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-text-secondary">
+                <span>Total: <strong className="text-text-primary">{users.length}</strong></span>
                 <span>Active: <strong className="text-green-400">{users.filter(u => u.status === "Active").length}</strong></span>
                 <span>Admins: <strong className="text-purple-400">{users.filter(u => u.role === "Admin").length}</strong></span>
             </div>
 
-            {/* ===== EDIT MODAL - Responsive ===== */}
+            {/* ===== EDIT MODAL ===== */}
             {showEditModal && selectedUser && (
                 <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-                    <div className="bg-gray-900 border border-yellow-500 rounded-lg w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-yellow-400 font-semibold text-base sm:text-lg mb-4">✏️ Edit User</h3>
+                    <div className="bg-bg-modal border border-border rounded-lg w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lime-600 dark:text-lime-400 font-semibold text-base sm:text-lg mb-4">✏️ Edit User</h3>
                         <form onSubmit={handleEditSubmit}>
                             <div className="space-y-3 sm:space-y-4">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Username</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Username</label>
                                     <input
                                         type="text"
                                         value={editFormData.username}
                                         onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Email</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Email</label>
                                     <input
                                         type="email"
                                         value={editFormData.email}
                                         onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Role</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Role</label>
                                     <select
                                         value={editFormData.role}
                                         onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                     >
                                         <option value="User">User</option>
                                         <option value="Admin">Admin</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Status</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Status</label>
                                     <select
                                         value={editFormData.status}
                                         onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                     >
                                         <option value="Active">Active</option>
                                         <option value="Inactive">Inactive</option>
@@ -367,10 +402,10 @@ export const ManageUsers = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 mt-6">
-                                <button type="submit" className="w-full sm:flex-1 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
-                                    Save Changes
+                                <button type="submit" disabled={isSubmitting} className="w-full sm:flex-1 py-2 bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg transition text-sm disabled:opacity-50">
+                                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                                 </button>
-                                <button type="button" onClick={() => setShowEditModal(false)} className="w-full sm:flex-1 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition text-sm">
+                                <button type="button" onClick={() => setShowEditModal(false)} className="w-full sm:flex-1 py-2 bg-bg-secondary border border-border text-text-primary font-semibold rounded-lg hover:bg-bg-hover transition text-sm">
                                     Cancel
                                 </button>
                             </div>
@@ -379,20 +414,20 @@ export const ManageUsers = () => {
                 </div>
             )}
 
-            {/* ===== DELETE MODAL - Responsive ===== */}
+            {/* ===== DELETE MODAL ===== */}
             {showDeleteModal && selectedUser && (
                 <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-                    <div className="bg-gray-900 border border-red-500 rounded-lg w-full max-w-md p-4 sm:p-6">
+                    <div className="bg-bg-modal border border-red-500 rounded-lg w-full max-w-md p-4 sm:p-6">
                         <h3 className="text-red-400 font-semibold text-base sm:text-lg mb-2">⚠️ Delete User</h3>
-                        <p className="text-gray-300 text-sm mb-6">
-                            Are you sure you want to delete <strong className="text-white">{selectedUser.username}</strong>? 
+                        <p className="text-text-secondary text-sm mb-6">
+                            Are you sure you want to delete <strong className="text-text-primary">{selectedUser.username}</strong>?
                             This action cannot be undone.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2">
-                            <button onClick={handleDeleteConfirm} className="w-full sm:flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition text-sm">
-                                Yes, Delete
+                            <button onClick={handleDeleteConfirm} disabled={isSubmitting} className="w-full sm:flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm disabled:opacity-50">
+                                {isSubmitting ? 'Deleting...' : 'Yes, Delete'}
                             </button>
-                            <button onClick={() => setShowDeleteModal(false)} className="w-full sm:flex-1 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition text-sm">
+                            <button onClick={() => setShowDeleteModal(false)} className="w-full sm:flex-1 py-2 bg-bg-secondary border border-border text-text-primary font-semibold rounded-lg hover:bg-bg-hover transition text-sm">
                                 Cancel
                             </button>
                         </div>
@@ -400,60 +435,60 @@ export const ManageUsers = () => {
                 </div>
             )}
 
-            {/* ===== ADD USER MODAL - Responsive ===== */}
+            {/* ===== ADD USER MODAL ===== */}
             {showAddModal && (
                 <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-                    <div className="bg-gray-900 border border-yellow-500 rounded-lg w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-yellow-400 font-semibold text-base sm:text-lg mb-4">➕ Add New User</h3>
+                    <div className="bg-bg-modal border border-border rounded-lg w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lime-600 dark:text-lime-400 font-semibold text-base sm:text-lg mb-4">➕ Add New User</h3>
                         <form onSubmit={handleAddUser}>
                             <div className="space-y-3 sm:space-y-4">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Username</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Username</label>
                                     <input
                                         type="text"
                                         value={newUserData.username}
                                         onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Email</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Email</label>
                                     <input
                                         type="email"
                                         value={newUserData.email}
                                         onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Password</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Password</label>
                                     <input
                                         type="password"
                                         value={newUserData.password}
                                         onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Role</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Role</label>
                                     <select
                                         value={newUserData.role}
                                         onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                     >
                                         <option value="User">User</option>
                                         <option value="Admin">Admin</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Status</label>
+                                    <label className="block text-sm text-text-secondary mb-1">Status</label>
                                     <select
                                         value={newUserData.status}
                                         onChange={(e) => setNewUserData({ ...newUserData, status: e.target.value })}
-                                        className="w-full px-3 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none text-sm"
+                                        className="w-full px-3 py-2 bg-bg-input border border-border rounded-lg text-text-primary focus:border-lime-500 focus:outline-none text-sm"
                                     >
                                         <option value="Active">Active</option>
                                         <option value="Inactive">Inactive</option>
@@ -461,10 +496,10 @@ export const ManageUsers = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 mt-6">
-                                <button type="submit" className="w-full sm:flex-1 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
-                                    Add User
+                                <button type="submit" disabled={isSubmitting} className="w-full sm:flex-1 py-2 bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg transition text-sm disabled:opacity-50">
+                                    {isSubmitting ? 'Adding...' : 'Add User'}
                                 </button>
-                                <button type="button" onClick={() => setShowAddModal(false)} className="w-full sm:flex-1 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition text-sm">
+                                <button type="button" onClick={() => setShowAddModal(false)} className="w-full sm:flex-1 py-2 bg-bg-secondary border border-border text-text-primary font-semibold rounded-lg hover:bg-bg-hover transition text-sm">
                                     Cancel
                                 </button>
                             </div>

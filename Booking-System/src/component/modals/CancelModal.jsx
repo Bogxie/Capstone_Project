@@ -5,6 +5,9 @@ export const CancelModal = ({
 }) => {
   if (!booking) return null;
 
+  const bookingId = booking.booking_id || booking.bookID;
+  const displayId = booking.display_id || booking.bookID;
+
   return (
     <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-xl border border-red-500 bg-zinc-900 text-white shadow-xl">
@@ -26,7 +29,7 @@ export const CancelModal = ({
         <div className="flex flex-col items-center p-4">
           <p className="text-center">
             Are you sure you want to cancel booking{" "}
-            <strong>ID: {booking.bookID}</strong>?
+            <strong>ID: {displayId}</strong>?
           </p>
 
           <p className="mt-2 text-center text-sm text-red-400">
@@ -37,9 +40,7 @@ export const CancelModal = ({
             <button
               className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700"
               onClick={() =>
-                handleCancellation(booking.bookID, {
-                  status: "Cancelled",
-                })
+                handleCancellation(bookingId, 'Cancelled')
               }
             >
               Yes

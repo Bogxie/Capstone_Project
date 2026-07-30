@@ -4,7 +4,7 @@ export const colorStatus = (status) => {
       return 'bg-yellow-400 font-bold rounded-full px-3 py-1 text-white';
     case 'Confirmed':
       return 'bg-sky-500 font-bold rounded-full px-3 py-1 text-white';
-    case 'Complete':
+    case 'Completed':
       return 'bg-green-500 font-bold rounded-full px-3 py-1 text-white';
     case 'Cancelled':
       return 'bg-red-500 font-bold rounded-full px-3 py-1 text-white';

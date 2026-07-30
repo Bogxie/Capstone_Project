@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { deliveryOption } from "../assets/utils/deliveryOptions";
+import { getDeliveryOptions, fetchDeliveryOptions } from "../assets/utils/deliveryOptions";
 
 const CAVITE_CENTER = [14.3, 120.9];
 const DEFAULT_ZOOM = 11;
@@ -10,44 +10,26 @@ const CAVITE_BOUNDS = {
     minLng: 120.6, maxLng: 121.2,
 };
 
+const BOUNDS_BUFFER = 0.03; 
+const RE_PIN_TOLERANCE_METERS = 3000;
+
 const isInsideCavite = (lat, lng) =>
-    lat >= CAVITE_BOUNDS.minLat && lat <= CAVITE_BOUNDS.maxLat &&
-    lng >= CAVITE_BOUNDS.minLng && lng <= CAVITE_BOUNDS.maxLng;
+    lat >= CAVITE_BOUNDS.minLat - BOUNDS_BUFFER && lat <= CAVITE_BOUNDS.maxLat + BOUNDS_BUFFER &&
+    lng >= CAVITE_BOUNDS.minLng - BOUNDS_BUFFER && lng <= CAVITE_BOUNDS.maxLng + BOUNDS_BUFFER;
+
+const toRad = (deg) => (deg * Math.PI) / 180;
+const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
 const normalize = (str) =>
     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-const MUNICIPALITY_KEYWORDS = deliveryOption.map((d) => ({
-    name: d.municipality,
-    keywords: [d.municipality.toLowerCase(), normalize(d.municipality)],
-}));
-
-const detectMunicipality = (addressObj) => {
-    if (!addressObj) return null;
-
-    const targetFields = [
-        addressObj.municipality,
-        addressObj.town,
-        addressObj.city,
-        addressObj.village,
-        addressObj.suburb,
-        addressObj.neighbourhood
-    ].filter(Boolean).map(val => normalize(val));
-
-    for (const entry of MUNICIPALITY_KEYWORDS) {
-        const cleanName = normalize(entry.name);
-        const hasExactMatch = targetFields.some(field => field === cleanName);
-        if (hasExactMatch) return entry.name;
-    }
-
-    for (const entry of MUNICIPALITY_KEYWORDS) {
-        const cleanName = normalize(entry.name);
-        const hasPartialMatch = targetFields.some(field => field.includes(cleanName));
-        if (hasPartialMatch) return entry.name;
-    }
-
-    return null;
-};
 
 export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initialLat = null, initialLng = null }) => {
     const mapRef = useRef(null);
@@ -55,9 +37,8 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
     const markerRef = useRef(null);
     const searchTimeoutRef = useRef(null);
     const searchBarRef = useRef(null);
-
-    // Iniimbak ang panimulang lat/lng sa isang ref para ma-access sa loob ng useEffect nang hindi nag-ti-trigger ng re-run
     const initialPropsRef = useRef({ initialLat, initialLng });
+    const municipalityKeywordsRef = useRef([]);
 
     const [searchQuery, setSearchQuery] = useState(initialVenue || "");
     const [searchResults, setSearchResults] = useState([]);
@@ -69,30 +50,117 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
     const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
 
     useEffect(() => {
+        const loadMunicipalities = async () => {
+            await fetchDeliveryOptions(true);
+            const options = getDeliveryOptions();
+            const keywords = options.map((d) => ({
+                name: d.municipality,
+                keywords: [d.municipality.toLowerCase(), normalize(d.municipality)],
+            }));
+            municipalityKeywordsRef.current = keywords;
+        };
+        loadMunicipalities();
+    }, []);
+
+    const detectMunicipality = (addressObj) => {
+        const municipalityKeywords = municipalityKeywordsRef.current;
+        if (!addressObj || municipalityKeywords.length === 0) {
+            return null;
+        }
+
+        const targetFields = [
+            addressObj.municipality,
+            addressObj.town,
+            addressObj.city,
+            addressObj.village,
+            addressObj.suburb,
+            addressObj.neighbourhood
+        ].filter(Boolean).map(val => normalize(val));
+
+        for (const entry of municipalityKeywords) {
+            const cleanName = normalize(entry.name);
+            if (targetFields.some(field => field === cleanName)) {
+                return entry.name;
+            }
+        }
+
+        for (const entry of municipalityKeywords) {
+            const cleanName = normalize(entry.name);
+            if (targetFields.some(field => field.includes(cleanName) || cleanName.includes(field))) {
+                return entry.name;
+            }
+        }
+
+        return null;
+    };
+
+    const isAllowedLocation = (lat, lng) => {
+        if (isInsideCavite(lat, lng)) return true;
+        if (markerRef.current) {
+            const current = markerRef.current.getLatLng();
+            const dist = getDistanceMeters(lat, lng, current.lat, current.lng);
+            if (dist <= RE_PIN_TOLERANCE_METERS) return true;
+        }
+        return false;
+    };
+
+    useEffect(() => {
         if (searchResults.length === 0) return;
 
         const updatePosition = () => {
             if (!searchBarRef.current) return;
-
             const rect = searchBarRef.current.getBoundingClientRect();
-
             setDropdownPos({
                 top: rect.bottom,
                 left: rect.left,
                 width: rect.width,
             });
         };
-         updatePosition();
+        updatePosition();
 
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
+        window.addEventListener("scroll", updatePosition, true);
+        window.addEventListener("resize", updatePosition);
 
-    return () => {
-        window.removeEventListener("scroll", updatePosition, true);
-        window.removeEventListener("resize", updatePosition);
-    };
-    
+        return () => {
+            window.removeEventListener("scroll", updatePosition, true);
+            window.removeEventListener("resize", updatePosition);
+        };
     }, [searchResults]);
+
+    const reverseGeocode = async (lat, lng) => {
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+                { headers: { "Accept-Language": "en" } }
+            );
+            const data = await res.json();
+            const displayName = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            const municipality = detectMunicipality(data.address);
+            
+            const isCavite = isInsideCavite(lat, lng);
+            
+            setSelectedAddress(displayName);
+            setDetectedMunicipality(municipality);
+            
+            onLocationSelect({ 
+                venue: displayName, 
+                lat, 
+                lng, 
+                municipality: municipality || "",
+                isInsideCavite: isCavite
+            });
+        } catch {
+            const fallback = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            setSelectedAddress(fallback);
+            onLocationSelect({ 
+                venue: fallback, 
+                lat, 
+                lng, 
+                municipality: "",
+                isInsideCavite: false
+            });
+        }
+    };
 
     const placeMarker = async (L, map, lat, lng, triggerGeocode = true) => {
         if (markerRef.current) markerRef.current.remove();
@@ -102,13 +170,14 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
 
         marker.on("dragend", async () => {
             const pos = marker.getLatLng();
-            if (!isInsideCavite(pos.lat, pos.lng)) {
+            if (!isAllowedLocation(pos.lat, pos.lng)) {
                 setOutOfBounds(true);
                 marker.setLatLng(CAVITE_CENTER);
                 leafletMap.current.setView(CAVITE_CENTER, DEFAULT_ZOOM);
                 setTimeout(() => setOutOfBounds(false), 3000);
                 return;
             }
+            setOutOfBounds(false);
             await reverseGeocode(pos.lat, pos.lng);
         });
 
@@ -123,31 +192,11 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
         setIsPinned(true);
     };
 
-    const reverseGeocode = async (lat, lng) => {
-        try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-                { headers: { "Accept-Language": "en" } }
-            );
-            const data = await res.json();
-            const displayName = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-            const municipality = detectMunicipality(data.address);
-            setSelectedAddress(displayName);
-            setDetectedMunicipality(municipality);
-            onLocationSelect({ venue: displayName, lat, lng, municipality: municipality || "" });
-        } catch {
-            const fallback = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-            setSelectedAddress(fallback);
-            onLocationSelect({ venue: fallback, lat, lng, municipality: "" });
-        }
-    };
-
     useEffect(() => {
         let mapInstance = null;
-        let isCleanedUp = false; // Flag para pigilan ang async race condition
+        let isCleanedUp = false;
 
         const initMap = async () => {
-            // 1. Kung may umiiral nang instance sa ref, burahin muna agad
             if (leafletMap.current) {
                 leafletMap.current.remove();
                 leafletMap.current = null;
@@ -161,32 +210,24 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
                 document.head.appendChild(link);
             }
 
-            // Isara ang execution kung nag-unmount na habang naglo-load ang CSS
             if (isCleanedUp) return;
 
             const L = await import("leaflet");
 
-            // Isara ulit kung nag-unmount habang nag-a-await ng import
             if (isCleanedUp || !mapRef.current) return;
-
-            // Double safety check: Siguraduhing walang nakakabit na map property sa HTML element
-            if (mapRef.current._leaflet_id) {
-                return;
-            }
+            if (mapRef.current._leaflet_id) return;
 
             delete L.Icon.Default.prototype._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
                 iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
                 shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
             });
 
             const { initialLat: startLat, initialLng: startLng } = initialPropsRef.current;
             const startCenter = startLat && startLng ? [parseFloat(startLat), parseFloat(startLng)] : CAVITE_CENTER;
             const startZoom = startLat && startLng ? 16 : DEFAULT_ZOOM;
 
-            // Likhain ang map instance
             mapInstance = L.map(mapRef.current).setView(startCenter, startZoom);
 
             L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -196,7 +237,7 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
 
             mapInstance.on("click", async (e) => {
                 const { lat, lng } = e.latlng;
-                if (!isInsideCavite(lat, lng)) {
+                if (!isAllowedLocation(lat, lng)) {
                     setOutOfBounds(true);
                     mapInstance.setView(CAVITE_CENTER, DEFAULT_ZOOM);
                     setTimeout(() => setOutOfBounds(false), 3000);
@@ -210,14 +251,12 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
             window._leafletL = L;
 
             setTimeout(async () => {
-                // Siguraduhing buhay pa ang mapInstance bago mag invalidate o mag geocode
                 if (mapInstance && !isCleanedUp) {
                     mapInstance.invalidateSize();
 
                     if (startLat && startLng) {
                         const numericLat = parseFloat(startLat);
                         const numericLng = parseFloat(startLng);
-
                         await placeMarker(L, mapInstance, numericLat, numericLng, false);
 
                         try {
@@ -226,7 +265,10 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
                                 { headers: { "Accept-Language": "en" } }
                             );
                             const data = await res.json();
-                            setDetectedMunicipality(detectMunicipality(data.address));
+                            const municipality = detectMunicipality(data.address);
+                            if (municipality) {
+                                setDetectedMunicipality(municipality);
+                            }
                         } catch {
                             // silent pass
                         }
@@ -237,16 +279,15 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
 
         initMap();
 
-        // ANG CRITICAL CLEANUP: Dito natin sinasakal ang memory leaks
         return () => {
-            isCleanedUp = true; // Haharangan lahat ng tumatakbong async tasks sa itaas
+            isCleanedUp = true;
             if (mapInstance) {
-                mapInstance.off(); // Alisin lahat ng event listeners
-                mapInstance.remove(); // Wasakin ang map state sa DOM
+                mapInstance.off();
+                mapInstance.remove();
             }
             leafletMap.current = null;
         };
-    }, []); // Isang beses lang mag-ru-run para iwas map destruction at blink habang nag-eedit
+    }, []);
 
     const handleSearch = async (query) => {
         if (!query.trim() || query.length < 3) { setSearchResults([]); return; }
@@ -291,6 +332,15 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
         const lng = parseFloat(result.lon);
         const L = window._leafletL;
         if (!L || !leafletMap.current) return;
+
+        if (!isAllowedLocation(lat, lng)) {
+            setSearchResults([]);
+            setOutOfBounds(true);
+            leafletMap.current.setView(CAVITE_CENTER, DEFAULT_ZOOM);
+            setTimeout(() => setOutOfBounds(false), 3000);
+            return;
+        }
+
         setSearchQuery(result.display_name);
         setSearchResults([]);
         await placeMarker(L, leafletMap.current, lat, lng, true);
@@ -298,28 +348,27 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
 
     return (
         <div className="w-full">
-            {/* Search Bar */}
+            {/* Search Bar - Dark theme with Lime accent */}
             <div className="mb-2" ref={searchBarRef}>
                 <div className="flex">
-                    <div className="flex items-center px-3 bg-zinc-900 border border-zinc-700 border-r-0 rounded-l-md text-amber-400">
+                    <div className="flex items-center px-3 bg-zinc-800 border border-zinc-700 border-r-0 rounded-l-md text-lime-400">
                         🔍
                     </div>
                     <input
                         type="text"
-                        placeholder="Search venue address (e.g. Sahud Ulan Tanza)..."
+                        placeholder="Search venue address..."
                         value={searchQuery}
                         onChange={handleSearchInput}
                         autoComplete="off"
-                        className="flex-1 bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="flex-1 bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-lime-500"
                     />
                     {isSearching && (
-                        <div className="flex items-center px-3 bg-zinc-900 border border-zinc-700 border-l-0 rounded-r-md">
-                            <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="flex items-center px-3 bg-zinc-800 border border-zinc-700 border-l-0 rounded-r-md">
+                            <div className="h-4 w-4 border-2 border-lime-500 border-t-transparent rounded-full animate-spin" />
                         </div>
                     )}
                 </div>
 
-                {/* Portal Dropdown */}
                 {searchResults.length > 0 && createPortal(
                     <div
                         style={{
@@ -336,9 +385,9 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
                                 key={r.place_id}
                                 type="button"
                                 onClick={() => handleResultClick(r)}
-                                className="flex w-full items-start px-3 py-2 text-left text-sm text-zinc-300 border-b border-zinc-800 hover:bg-zinc-800 transition-colors last:border-0"
+                                className="flex w-full items-start px-3 py-2 text-left text-sm text-zinc-300 border-b border-zinc-800 hover:bg-zinc-800 hover:text-lime-400 transition-colors last:border-0"
                             >
-                                <span className="text-amber-400 mr-2 shrink-0">📍</span>
+                                <span className="text-lime-400 mr-2 shrink-0">📍</span>
                                 <span>{r.display_name}</span>
                             </button>
                         ))}
@@ -348,14 +397,11 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
             </div>
 
             {/* Map */}
-            <div
-                ref={mapRef}
-                className="h-[260px] w-full rounded-lg border border-zinc-700"
-            />
+            <div ref={mapRef} className="h-[260px] w-full rounded-lg border border-zinc-700" />
 
             {/* Out of Bounds */}
             {outOfBounds && (
-                <div className="mt-2 flex items-center gap-2 rounded-lg border border-red-500 bg-red-500/10 px-3 py-2 text-red-300">
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-red-500 bg-red-500/10 px-3 py-2 text-red-400">
                     ⚠️ <span className="text-sm">Service area is <strong>Cavite only</strong>. Map has been reset.</span>
                 </div>
             )}
@@ -367,15 +413,15 @@ export const LocationPickerMap = ({ onLocationSelect, initialVenue = "", initial
                 </p>
             )}
 
-            {/* Result */}
+            {/* Result - Dark theme with Lime accent */}
             {isPinned && selectedAddress && (
-                <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3">
+                <div className="mt-3 rounded-lg border border-lime-500/25 bg-lime-500/10 p-3">
                     <div className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5 shrink-0">📌</span>
+                        <span className="text-lime-400 mt-0.5 shrink-0">📌</span>
                         <div className="flex-1">
-                            <div className="text-sm text-black break-words">{selectedAddress}</div>
+                            <div className="text-sm text-white break-words">{selectedAddress}</div>
                             {detectedMunicipality ? (
-                                <span className="mt-2 inline-flex rounded-full bg-amber-400 px-2.5 py-1 text-xs font-medium text-black">
+                                <span className="mt-2 inline-flex rounded-full bg-lime-500 px-2.5 py-1 text-xs font-medium text-black">
                                     📍 {detectedMunicipality} — delivery fee auto-set
                                 </span>
                             ) : (

@@ -4,13 +4,13 @@ import { BookingOptions } from "./Modals/BookingOptions.jsx";
 import { BookingSuccess } from "./BookingSuccess.jsx";
 import { months } from "../assets/Utils/months.js";
 import { socket } from "../services/socket.js";
-import '../assets/css/Calendar.css'
 import { useBooking } from "../context/useBooking.js";
+import '../assets/css/Calendar.css'
 
 const Service_colors = {
     "Golden Hour": "#F59E0B",
-    "Snoop Dough": "#92400E",
-    "Rental Projector": "#1E293B",
+    "Snoop Dough": "#EA580C",
+    "Rental Projector": "#06B6D4",
 };
 
 const ALL_SERVICES = Object.keys(Service_colors);
@@ -33,30 +33,34 @@ const getDayClasses = (bookedServiceList, isToday, isPast, isBlocked, hasConflic
     const base = "relative w-full aspect-square flex justify-center items-center text-center transition-all duration-300 font-extrabold text-sm sm:text-base rounded-[10px] select-none group";
 
     if (isBlocked) {
-        return `${base} bg-red-700 text-white cursor-not-allowed border border-red-400`;
+        return `${base} bg-zinc-700 text-white cursor-not-allowed border border-red-500/50`;
     }
     if (hasConflict) {
-        return `${base} bg-yellow-500 text-white cursor-wait border-2 border-yellow-300 animate-pulse`;
+        return `${base} bg-yellow-500/20 text-white cursor-wait border-2 border-yellow-400 animate-pulse`;
     }
     if (bookedServiceList.length > 0) {
         const isFullyBooked = bookedServiceList.length === ALL_SERVICES.length;
+        // ✅ PAST DATES WITH BOOKINGS - opacity-50
+        if (isPast) {
+            return `${base} day-cell-booked opacity-50 cursor-default`;
+        }
         return `${base} day-cell-booked ${isFullyBooked ? "cursor-default" : "cursor-pointer"}`;
     }
     if (isToday) {
-        return `${base} bg-white border border-[#1e1e1e] text-[#1e1e1e] font-black`;
+        return `${base} bg-lime-500 text-zinc-950 font-black border-2 border-white`;
     }
     if (isPast) {
-        return `${base} bg-[#1e1e1e] text-white opacity-40 cursor-default border border-white/20`;
+        return `${base} bg-zinc-800 text-zinc-500 opacity-50 cursor-default border border-zinc-700`;
     }
 
     return `${base} day-cell-standard hover:z-10`;
 };
 
-export const Calendar = ({ disableServices, blackoutDates = [] }) => {
+export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = {} }) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { bookings } = useBooking();
+    const { bookings, refreshBookings } = useBooking();
     const { currentUser, setShowSignIn } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
@@ -74,40 +78,55 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
             setActiveConflicts(conflicts);
         });
 
-        socket.on('slot-reserved', ({ date, service }) => {
+        const onSlotReserved = ({ date, service }) => {
             const key = `${date}-${service}`;
             setActiveConflicts(prev => ({ ...prev, [key]: true }));
-        });
+        };
 
-        socket.on('slot-released', ({ date, service }) => {
+        const onSlotReleased = ({ date, service }) => {
             const key = `${date}-${service}`;
             setActiveConflicts(prev => {
                 const newConflicts = { ...prev };
                 delete newConflicts[key];
                 return newConflicts;
             });
-        });
+        };
 
-        socket.on('slot-confirmed', ({ date, service }) => {
+        const onSlotConfirmed = ({ date, service }) => {
             const key = `${date}-${service}`;
             setActiveConflicts(prev => {
                 const newConflicts = { ...prev };
                 delete newConflicts[key];
                 return newConflicts;
             });
-        });
+            refreshBookings();
+        };
 
-        socket.on('booking-conflict', ({ message }) => {
+        const onBookingCreated = ({ date, service }) => {
+            console.log(`📅 New permanent booking: ${service} on ${date}`);
+            const key = `${date}-${service}`;
+            setActiveConflicts(prev => ({ ...prev, [key]: true }));
+            refreshBookings();
+        };
+
+        const onBookingConflict = ({ message }) => {
             alert(`⚠️ ${message}\n\nSomeone is trying to book the same slot. Please complete your booking quickly!`);
-        });
+        };
+
+        socket.on('slot-reserved', onSlotReserved);
+        socket.on('slot-released', onSlotReleased);
+        socket.on('slot-confirmed', onSlotConfirmed);
+        socket.on('booking-created', onBookingCreated);
+        socket.on('booking-conflict', onBookingConflict);
 
         return () => {
-            socket.off('slot-reserved');
-            socket.off('slot-released');
-            socket.off('slot-confirmed');
-            socket.off('booking-conflict');
+            socket.off('slot-reserved', onSlotReserved);
+            socket.off('slot-released', onSlotReleased);
+            socket.off('slot-confirmed', onSlotConfirmed);
+            socket.off('booking-created', onBookingCreated);
+            socket.off('booking-conflict', onBookingConflict);
         };
-    }, []);
+    }, [refreshBookings]);
 
     const bookedDateMap = useMemo(() => {
         const map = new Map();
@@ -119,12 +138,16 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
         return map;
     }, [bookings]);
 
+    // ✅ LIMIT: 3 months lang ang previous
+    const minAllowedDate = new Date(today);
+    minAllowedDate.setMonth(today.getMonth() - 3);
+    minAllowedDate.setHours(0, 0, 0, 0);
+
     const prevMonth = () => {
         const prev = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-        if (
-            prev.getFullYear() > today.getFullYear() ||
-            (prev.getFullYear() === today.getFullYear() && prev.getMonth() >= today.getMonth())
-        ) {
+        // ✅ Check kung within 3 months limit
+        const prevMonthStart = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        if (prevMonthStart >= minAllowedDate) {
             setCurrentDate(prev);
         }
     };
@@ -133,7 +156,14 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
+    // ✅ Check kung naka-disable ang prev button
+    const isPrevDisabled = () => {
+        const prevMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        return prevMonthStart < minAllowedDate;
+    };
+
     const handleDayClick = (dayNumber, isPast, isFullyBooked, bookedServices = [], isBlocked, dateString) => {
+        // ✅ Hindi na pwedeng mag-click sa past dates (kahit may booking)
         if (isPast || isFullyBooked || isBlocked) return;
         if (!currentUser) {
             setShowSignIn(true);
@@ -141,14 +171,22 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
         }
 
         const bookedSet = bookedServices || new Set();
+        
         const availableServices = ALL_SERVICES.filter(svc => {
             const isBooked = bookedSet.has(svc);
             const hasConflict = activeConflicts[`${dateString}-${svc}`];
-            return !isBooked && !hasConflict;
+            const isDisabled = disableServices.includes(svc);
+            return !isBooked && !hasConflict && !isDisabled;
         });
 
+        const allDisabled = ALL_SERVICES.every(svc => disableServices.includes(svc));
+        if (allDisabled) {
+            alert('All services are currently unavailable. Please check back later.');
+            return;
+        }
+
         if (availableServices.length === 0) {
-            alert('All services are currently booked or pending for this date. Please choose another date.');
+            alert('All services are currently booked or unavailable for this date. Please choose another date.');
             return;
         }
 
@@ -174,7 +212,7 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
         socket.emit('booking-confirmed', { 
             date: dateString, 
             service, 
-            userId: currentUser.id || currentUser.username 
+            userId: currentUser?.user_id || currentUser?.id || currentUser?.username
         });
     };
 
@@ -211,15 +249,28 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
             const isFullyBooked = bookedServiceList.length === ALL_SERVICES.length;
             const stripGradient = buildStripGradient(bookedServiceList);
 
+            const disabledForDate = ALL_SERVICES.filter(svc => disableServices.includes(svc));
+
+            let titleText = "";
+            if (isBlocked) {
+                titleText = "Blocked by Admin";
+            } else if (hasDateConflict) {
+                titleText = "Some services are being booked by another user";
+            } else if (bookedServiceList.length > 0 && disabledForDate.length > 0) {
+                titleText = `Booked: ${bookedServiceList.join(", ")} | Unavailable: ${disabledForDate.join(", ")}`;
+            } else if (bookedServiceList.length > 0) {
+                titleText = `Booked: ${bookedServiceList.join(", ")}`;
+            } else if (disabledForDate.length > 0) {
+                titleText = `Unavailable: ${disabledForDate.join(", ")}`;
+            }
+
             cells.push(
                 <div
                     key={dayNumber}
                     onClick={() => handleDayClick(dayNumber, isPast, isFullyBooked, bookedServices, isBlocked, dateString)}
                     className={getDayClasses(bookedServiceList, isToday, isPast, isBlocked, hasDateConflict)}
                     style={!isBlocked ? (stripGradient ? { background: stripGradient } : undefined) : undefined}
-                    title={isBlocked ? "Blocked by Admin" : 
-                          hasDateConflict ? "Some services are being booked by another user" :
-                          bookedServiceList.length > 0 ? `Booked: ${bookedServiceList.join(", ")}` : undefined}
+                    title={titleText}
                 >
                     <span>{dayNumber}</span>
                     {hasDateConflict && (
@@ -232,50 +283,63 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
                             🚫
                         </span>
                     )}
+                    {/* ✅ Indicator kung may booking pero past date */}
+                    {isPast && bookedServiceList.length > 0 && (
+                        <span className="absolute -top-0.5 -left-0.5 text-[8px] opacity-70">
+                            📅
+                        </span>
+                    )}
                 </div>
             );
         }
         return cells;
     };
 
-    const isAtMinMonth =
-        currentDate.getFullYear() === today.getFullYear() &&
-        currentDate.getMonth() === today.getMonth();
+    // ✅ Check kung naka-disable ang prev button
+    const prevDisabled = isPrevDisabled();
 
     return (
         <>
-            <h3 className="text-center pt-2 font-bold text-xl">Select Your Date</h3>
+            <h3 className="text-center pt-2 font-bold text-xl text-text-primary">Select Your Date</h3>
+            
             <div className="flex justify-center gap-3 flex-wrap py-2">
-                {ALL_SERVICES.map((svc) => (
-                    <div key={svc} className="flex items-center gap-1 text-xs font-semibold">
-                        <div
-                            className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10"
-                            style={{ background: Service_colors[svc] }}
-                        />
-                        <span>{svc}</span>
-                    </div>
-                ))}
+                {ALL_SERVICES.map((svc) => {
+                    const isDisabled = disableServices.includes(svc);
+                    return (
+                        <div key={svc} className="flex items-center gap-1 text-xs font-semibold text-text-secondary">
+                            <div
+                                className={`w-3 h-3 rounded-full flex-shrink-0 border border-border ${isDisabled ? 'opacity-40 grayscale' : ''}`}
+                                style={{ background: isDisabled ? '#6b7280' : Service_colors[svc] }}
+                            />
+                            <span className={isDisabled ? 'line-through text-zinc-500' : ''}>
+                                {svc}
+                                {isDisabled && <span className="text-red-400 ml-1 text-[8px]">(disabled)</span>}
+                            </span>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="flex justify-center px-2 mt-4" id="calendar">
-                <div className="w-full max-w-[34.375rem] bg-[#6184D8] rounded-[10px] m-2 shadow-lg p-2 sm:p-2" >
+                <div className="w-full max-w-[34.375rem] bg-bg-card rounded-[10px] m-2 shadow-lg p-2 sm:p-2 border border-border">
                     <div className="flex justify-between items-center mb-4 gap-2 p-2">
                         <button
                             onClick={prevMonth}
-                            disabled={isAtMinMonth}
-                            className="bg-[#1e1e1e] text-[#f5f5f5] border border-[#f5f5f5] px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-[#f5f5f5] hover:text-[#6184D8] hover:border-[#6184D8] disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={prevDisabled}
+                            className="bg-bg-secondary text-text-primary border border-border px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-lime-500 hover:text-black hover:border-lime-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={prevDisabled ? "Cannot go back more than 3 months" : "Previous month"}
                         >
                             &lt;
                         </button>
-                        <h2 className="mb-0 text-2xl sm:text-3xl font-extrabold text-[#1e1e1e] calendar-month-title text-center flex items-center justify-center gap-1.5 tracking-wide">
+                        <h2 className="mb-0 text-2xl sm:text-3xl font-extrabold text-text-primary calendar-month-title text-center flex items-center justify-center gap-1.5 tracking-wide">
                             {months[currentDate.getMonth()]}
-                            <span className="inline-block bg-[#1e1e1e] text-[#6184D8] border border-white text-xs sm:text-sm font-bold px-2 py-0.5 rounded shadow-sm">
+                            <span className="inline-block bg-bg-secondary text-lime-400 border border-border text-xs sm:text-sm font-bold px-2 py-0.5 rounded shadow-sm">
                                 {currentDate.getFullYear()}
                             </span>
                         </h2>
                         <button
                             onClick={nextMonth}
-                            className="bg-[#1e1e1e] text-[#f5f5f5] border border-[#f5f5f5] px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-[#f5f5f5] hover:text-[#6184D8] hover:border-[#6184D8]"
+                            className="bg-bg-secondary text-text-primary border border-border px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-lime-500 hover:text-black hover:border-lime-400"
                         >
                             &gt;
                         </button>
@@ -283,14 +347,19 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
 
                     <div className="grid grid-cols-7 text-center mb-2 px-1">
                         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                            <div key={d} className="flex justify-center items-center font-bold text-[#1e1e1e] text-xs sm:text-sm opacity-90">
+                            <div key={d} className="flex justify-center items-center font-bold text-text-muted text-xs sm:text-sm opacity-90">
                                 {d}
                             </div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 p-1 bg-[#6184D8] rounded-[10px]">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 p-1 bg-bg-card rounded-[10px]">
                         {renderDays()}
+                    </div>
+
+                    {/* ✅ Info text about 3-month limit */}
+                    <div className="text-center text-[10px] text-text-muted mt-2 border-t border-border pt-2">
+                        📅 Can view up to 3 months back
                     </div>
                 </div>
             </div>
@@ -305,6 +374,7 @@ export const Calendar = ({ disableServices, blackoutDates = [] }) => {
                     availableServices={selectedDate.availableServices}
                     socket={socket}
                     currentUser={currentUser}
+                    serviceConfig={serviceConfig}
                 />
             )}
 

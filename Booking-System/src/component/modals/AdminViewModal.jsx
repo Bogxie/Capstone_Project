@@ -1,33 +1,53 @@
+import { useState } from "react";
 import { formatCurrency } from "../../assets/Utils/formatCurrency";
 import { colorStatus } from "../../assets/utils/colorStatus";
 import { AdminMapView } from "../AdminVIewMap";
 
 export const AdminViewModal = ({ booking, onClose }) => {
+    const [showMap, setShowMap] = useState(false);
+
     if (!booking) return null;
 
-    const paymentRows = [
-        { label: "Rental Fee:", value: booking.rentalFee },
-        { label: "Delivery Fee:", value: booking.deliveryFee },
-        { label: "Tax:", value: booking.tax },
-    ];
+    const rentalFee = Number(booking.rental_fee || booking.rentalFee || 0);
+    const deliveryFee = Number(booking.delivery_fee || booking.deliveryFee || 0);
+    const tax = Number(booking.tax || 0);
+    const downpayment = Number(booking.downpayment || 0);
+    const total = Number(booking.total || 0);
+    const displayId = booking.display_id || booking.bookID || `BK-${String(booking.booking_id).padStart(6, '0')}`;
+    const fullName = booking.full_name || booking.fullName;
+    const email = booking.email;
+    const phoneNum = booking.phone_num || booking.phoneNum;
+    const description = booking.description;
+    const month = booking.month;
+    const date = booking.date || booking.day;
+    const year = booking.year;
+    const timeStart = booking.timeStart || (booking.time_start ? booking.time_start.split(' ')[0] : '');
+    const timeStartAmPm = booking.timeStartAmPm || (booking.time_start ? booking.time_start.split(' ')[1] : '');
+    const timeEnd = booking.timeEnd || (booking.time_end ? booking.time_end.split(' ')[0] : '');
+    const timeEndAmPm = booking.timeEndAmPm || (booking.time_end ? booking.time_end.split(' ')[1] : '');
+    const status = booking.status;
+    const paymentMethod = booking.payment_method || booking.paymentMethod;
+    const venue = booking.venue;
+    const municipality = booking.municipality;
+    const lat = booking.lat;
+    const lng = booking.lng;
 
     return (
-        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
-
+        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
                 {/* Header */}
-                <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-gray-200">
-                    <div className="flex items-center gap-2 font-semibold text-sm text-[#1e1e1e]">
+                <div className="flex justify-between items-center px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+                    <div className="flex items-center gap-2 font-semibold text-sm text-white">
                         ℹ️
                         <div>
-                            <h5 className="mb-0 text-sm font-bold">Booking Reservation</h5>
-                            <p className="mb-0 text-[#6184D8] text-xs">{booking.bookID}</p>
+                            <h5 className="mb-0 text-sm font-bold text-white">Booking Reservation</h5>
+                            <p className="mb-0 text-lime-400 text-xs">{displayId}</p>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-700 transition-colors"
+                        className="text-zinc-400 hover:text-white transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -36,72 +56,109 @@ export const AdminViewModal = ({ booking, onClose }) => {
                 </div>
 
                 <div className="p-3 max-h-[75vh] overflow-y-auto hide-scrollbar">
-                    <h6 className="text-center font-bold text-sm mb-2">GENERAL INFORMATION</h6>
+                    <h6 className="text-center font-bold text-sm text-lime-400 mb-2">GENERAL INFORMATION</h6>
 
                     {/* User Info */}
-                    <div className="flex justify-between items-center bg-[#1e1e1e] rounded-md px-3 py-2 mb-2">
+                    <div className="flex justify-between items-center bg-zinc-800 rounded-md px-3 py-2 mb-2">
                         <div className="overflow-hidden">
-                            <p className="text-white text-sm font-semibold mb-0">{booking.fullName}</p>
-                            <p className="text-[#6184D8] text-xs mb-0">{booking.email} · {booking.phoneNum}</p>
+                            <p className="text-white text-sm font-semibold mb-0">{fullName}</p>
+                            <p className="text-zinc-400 text-xs mb-0">{email} · {phoneNum}</p>
                         </div>
-                        <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-0.5 rounded ml-2 shrink-0">
-                            {booking.description}
+                        <span className="bg-lime-500 text-black text-xs font-semibold px-2 py-0.5 rounded ml-2 shrink-0">
+                            {description}
                         </span>
                     </div>
 
                     {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div className="bg-[#1e1e1e] rounded-md p-2">
-                            <p className="text-white text-xs mb-0.5">Date</p>
-                            <p className="text-[#6184D8] text-xs mb-0">{booking.month} {booking.date}, {booking.year}</p>
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">📅 Date</p>
+                            <p className="text-lime-400 text-xs mb-0">{month} {date}, {year}</p>
                         </div>
-                        <div className="bg-[#1e1e1e] rounded-md p-2">
-                            <p className="text-white text-xs mb-0.5">Time</p>
-                            <p className="text-[#6184D8] text-xs mb-0">{booking.timeStart} {booking.timeStartAmPm} - {booking.timeEnd} {booking.timeEndAmPm}</p>
-                        </div>
-
-                        {/* Venue — full width */}
-                        <div className="col-span-2 bg-[#1e1e1e] rounded-md p-2">
-                            <p className="text-white text-xs mb-1">Venue</p>
-                            <AdminMapView
-                                lat={booking.lat}
-                                lng={booking.lng}
-                                venue={booking.venue}
-                                municipality={booking.municipality}
-                            />
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">🕐 Time</p>
+                            <p className="text-lime-400 text-xs mb-0">{timeStart} {timeStartAmPm} - {timeEnd} {timeEndAmPm}</p>
                         </div>
 
-                        <div className="bg-[#1e1e1e] rounded-md p-2">
-                            <p className="text-white text-xs mb-0.5">Status</p>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-black ${colorStatus(booking.status)}`}>
-                                {booking.status}
+                        {/* Venue */}
+                        <div className="col-span-2 bg-zinc-800 rounded-md p-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="text-white text-xs mb-0">📍 Venue</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMap(!showMap)}
+                                    className="text-xs text-lime-400 hover:text-lime-300 transition-colors font-semibold"
+                                >
+                                    {showMap ? "Hide Map ▲" : "Show Map ▼"}
+                                </button>
+                            </div>
+                            
+                            {!showMap ? (
+                                <div>
+                                    <p className="text-zinc-300 text-xs break-words">{venue || "No venue provided"}</p>
+                                    <p className="text-lime-400 text-xs mt-0.5">📍 {municipality || "No municipality"}</p>
+                                </div>
+                            ) : (
+                                <div className="mt-1">
+                                    <AdminMapView
+                                        lat={lat}
+                                        lng={lng}
+                                        venue={venue}
+                                        municipality={municipality}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">⚡ Status</p>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-black ${colorStatus(status)}`}>
+                                {status}
                             </span>
                         </div>
-                        <div className="bg-[#1e1e1e] rounded-md p-2">
-                            <p className="text-white text-xs mb-0.5">Payment</p>
-                            <p className="text-[#6184D8] text-sm font-medium mb-0">{booking.paymentMethod}</p>
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">💳 Payment</p>
+                            <p className="text-lime-400 text-sm font-medium mb-0">{paymentMethod}</p>
                         </div>
                     </div>
 
                     {/* Payment Details */}
-                    <div className="border border-gray-300 rounded-lg mb-2 overflow-hidden">
-                        <div className="bg-gray-100 text-center py-1.5 border-b border-gray-300">
-                            <h6 className="font-bold text-sm text-black mb-0">PAYMENT DETAILS</h6>
+                    <div className="border border-zinc-700 rounded-lg mb-2 overflow-hidden">
+                        <div className="bg-zinc-800 text-center py-1.5 border-b border-zinc-700">
+                            <h6 className="font-bold text-sm text-lime-400 mb-0">PAYMENT DETAILS</h6>
                         </div>
                         <div className="px-3 py-2 space-y-1 text-sm">
-                            {paymentRows.map((item) => (
-                                <div key={item.label} className="flex justify-between">
-                                    <span className="text-gray-600">{item.label}</span>
-                                    <span className="font-medium">₱ {formatCurrency(item.value)}</span>
-                                </div>
-                            ))}
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Downpayment:</span>
-                                <span className="text-red-500 font-medium">₱ - {formatCurrency(booking.downpayment)}</span>
+                                <span className="text-zinc-400">Rental Fee:</span>
+                                <span className="font-medium text-white">₱{formatCurrency(rentalFee)}</span>
                             </div>
-                            <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
-                                <span className="font-bold">Total:</span>
-                                <span className="font-bold">₱ {formatCurrency(booking.total)}</span>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Delivery Fee:</span>
+                                <span className="font-medium text-white">₱{formatCurrency(deliveryFee)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Tax:</span>
+                                <span className="font-medium text-white">₱{formatCurrency(tax)}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-zinc-700 pt-1 mt-1">
+                                <span className="text-zinc-400">Subtotal:</span>
+                                <span className="font-medium text-white">₱{formatCurrency(rentalFee + deliveryFee)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Tax (12%):</span>
+                                <span className="font-medium text-white">₱{formatCurrency(tax)}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-zinc-700 pt-1 mt-1">
+                                <span className="font-bold text-white">Total:</span>
+                                <span className="font-bold text-lime-400">₱{formatCurrency(total)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Downpayment:</span>
+                                <span className="text-red-400 font-medium">- ₱{formatCurrency(downpayment)}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-zinc-700 pt-1 mt-1">
+                                <span className="font-bold text-green-400">Remaining Balance:</span>
+                                <span className="font-bold text-green-400">₱{formatCurrency(total - downpayment)}</span>
                             </div>
                         </div>
                     </div>
@@ -109,7 +166,7 @@ export const AdminViewModal = ({ booking, onClose }) => {
                     {/* Close Button */}
                     <button
                         type="button"
-                        className="w-full py-2 text-sm font-semibold rounded-lg bg-[#6184D8] text-white hover:bg-[#4f6ec0] transition-colors"
+                        className="w-full py-2 text-sm font-semibold rounded-lg bg-lime-500 text-black hover:bg-lime-400 transition-colors"
                         onClick={onClose}
                     >
                         Close

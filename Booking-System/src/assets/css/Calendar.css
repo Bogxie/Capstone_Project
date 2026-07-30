@@ -1,25 +1,102 @@
 
 .day-cell-standard {
-    -webkit-text-stroke: 0.1rem #1e1e1e;
-    color: #6184D8;
+    color: #ffffff;
     background-color: #1e1e1e;
-    border: 1px solid rgba(245, 245, 245, 0.35) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    transition: all 0.2s ease;
 }
 
 .day-cell-standard:hover {
-    background-image: none !important; /* Siguradong walang strip gradient na maiiwan */
-    background-color: #ffffff !important;
-    color: #1e1e1e !important;
-    border: 1px solid #1e1e1e !important;
+    background-image: none !important;
+    background-color: #3f6212 !important;
+    color: #ffffff !important;
+    border: 1px solid #84cc16 !important;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(132, 204, 22, 0.2);
 }
 
 .day-cell-booked {
     color: #ffffff !important;
-    text-shadow: 0px 0px 2px #1e1e1e;
-    border: 1px solid #1e1e1e !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+/* ✅ FIXED: Use CSS variable for dynamic theme */
 .calendar-month-title {
     font-variant-caps: all-petite-caps;
-    -webkit-text-stroke: 0.5px white;
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
+    color: var(--text-primary);
+}
+
+.calendar-container {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.calendar-header {
+    background-color: #0f172a;
+    border-bottom: 1px solid #334155;
+}
+
+.calendar-day-name {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.day-cell-today {
+    background-color: #84cc16 !important;
+    color: #0f172a !important;
+    border: 2px solid #84cc16 !important;
+    font-weight: 900;
+    box-shadow: 0 0 20px rgba(132, 204, 22, 0.3);
+}
+
+.day-cell-blocked {
+    background-color: #450a0a !important;
+    color: #7f1d1d !important;
+    border: 1px solid #7f1d1d !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.day-cell-conflict {
+    background-color: #713f12 !important;
+    color: #fbbf24 !important;
+    border: 2px solid #fbbf24 !important;
+    animation: pulse-conflict 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-conflict {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(251, 191, 36, 0.5);
+    }
+}
+
+.day-cell-past {
+    background-color: #1a1a1a !important;
+    color: #4a4a4a !important;
+    opacity: 0.4;
+    cursor: default;
+    border: 1px solid #2a2a2a !important;
+}
+
+.day-cell-booked .service-strip {
+    border-radius: 0 0 4px 4px;
+    height: 3px;
+    margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+    .day-cell-standard,
+    .day-cell-booked,
+    .day-cell-today,
+    .day-cell-blocked,
+    .day-cell-conflict,
+    .day-cell-past {
+        font-size: 0.7rem;
+        border-radius: 6px !important;
+    }
 }

@@ -1,4 +1,5 @@
-export const StartRating = ({ rating, hover, setRating, setHover }) => {
+// component/modals/StarRating.jsx (Rename from StartRating.jsx)
+export const StarRating = ({ rating, hover, setRating, setHover }) => {
     return (
         <div className="flex justify-center gap-1 pb-1 select-none">
             {[...Array(5)].map((_, i) => {

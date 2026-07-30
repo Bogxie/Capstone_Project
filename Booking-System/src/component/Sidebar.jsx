@@ -1,10 +1,11 @@
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.js'
 
 const navLinkClass = ({ isActive }) =>
-    `block w-full text-center py-2 px-3 rounded transition-colors ${isActive
-        ? "bg-yellow-400 text-black font-bold"
-        : "bg-white/10 text-yellow-400 hover:bg-white/20"
+    `block w-full text-center py-2 px-3 rounded transition-colors border-2 ${
+        isActive
+            ? "bg-lime-500 text-black font-bold border-lime-500"
+            : "text-text-secondary hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10 border-border hover:border-lime-500/30"
     }`;
 
 const adminLinks = [
@@ -17,29 +18,26 @@ const adminLinks = [
 const userLinks = [
     { to: "/UserPage", label: "My Bookings" },
     { to: "/UserProfile", label: "Profile" },
-   
 ];
 
 const sharedLinks = [
-  
     { to: "/HelpSupport", label: "Help & Support" },
     { to: "/Settings", label: "Settings" },
-    
 ];
 
 export const Sidebar = ({ showSidebar, onClose }) => {
-    const { currentUser } = useAuth();
-
+    const { currentUser, logout } = useAuth();
     const roleLinks = currentUser.role === "Admin" ? adminLinks : userLinks;
 
     return (
         <div className={`
             hide-scrollbar
             fixed top-[4.110rem] left-0 bottom-0 w-[12.5rem] z-[300]
-            bg-[#212529] flex flex-col items-center py-8
+            bg-bg-secondary flex flex-col items-center py-8
             overflow-y-auto transition-transform duration-300 ease-in-out
             ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
             lg:translate-x-0
+            border-r border-border
         `}>
             <button
                 onClick={onClose}
@@ -53,13 +51,13 @@ export const Sidebar = ({ showSidebar, onClose }) => {
                 <img
                     src={currentUser?.profile}
                     alt="profile"
-                    className="w-full h-full object-cover rounded-full border-[3px] border-lime-400 bg-yellow-400"
+                    className="w-full h-full object-cover rounded-full border-[3px] border-lime-500"
                 />
             </div>
 
             {/* Username */}
             <div className="w-full text-center mb-8">
-                <h4 className="text-yellow-400 font-bold text-xl m-0">
+                <h4 className="text-text-primary font-bold text-xl m-0">
                     {currentUser?.username}
                 </h4>
             </div>
@@ -84,12 +82,12 @@ export const Sidebar = ({ showSidebar, onClose }) => {
                     ))}
 
                     <li>
-                        <Link
-                            to="/"
-                            className="block w-full text-center py-2 px-3 rounded bg-yellow-400 text-black font-bold hover:bg-yellow-500 transition-colors"
+                        <button
+                            onClick={logout}
+                            className="block w-full text-center py-2 px-3 rounded bg-red-600 hover:bg-red-700 text-white font-bold transition-colors border-2 border-red-500"
                         >
                             Log Out
-                        </Link>
+                        </button>
                     </li>
                 </ul>
             </div>

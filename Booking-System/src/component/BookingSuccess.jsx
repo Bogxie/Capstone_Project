@@ -1,14 +1,28 @@
 import { generateReceiptImage } from '../assets/utils/generateReceipt';
 
-export const BookingSuccess = ({ bookingDetails, onClose }) => {
+export const BookingSuccess = ({ bookingDetails, onClose, isEdit = false }) => {
     if (!bookingDetails) return null;
 
     const handleReceipt = () => {
         generateReceiptImage(bookingDetails);
     };
 
+    const formatDate = () => {
+        if (!bookingDetails) return '';
+        const month = bookingDetails.month || '';
+        const date = bookingDetails.date || bookingDetails.day || '';
+        const year = bookingDetails.year || '';
+        return `${month} ${date}, ${year}`.trim();
+    };
+
+    const getDisplayId = () => {
+        return bookingDetails.display_id || bookingDetails.bookID || 
+               `BK-${String(bookingDetails.booking_id || '').padStart(6, '0')}`;
+    };
+
     return (
-        <div className="fixed inset-0 z-[260] flex items-center justify-center bg-black/20 backdrop-blur-sm p-5">
+        // ✅ FIX: z-[260] → z-[1260] para mas mataas kaysa sa EditModal (z-[1050])
+        <div className="fixed inset-0 z-[1260] flex items-center justify-center bg-black/20 backdrop-blur-sm p-5">
             <div className="w-full max-w-md bg-white text-gray-900 rounded-xl shadow-2xl border-0 overflow-hidden">
                 
                 {/* Close Button */}
@@ -25,22 +39,33 @@ export const BookingSuccess = ({ bookingDetails, onClose }) => {
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-col items-center px-6 pb-6 gap-3 z-[260]">
-                    <h4 className="text-xl font-bold text-green-600 text-center">
-                        Booking Successful!
+                <div className="flex flex-col items-center px-6 pb-6 gap-3">
+                    <h4 className={`text-xl font-bold text-center ${isEdit ? 'text-blue-600' : 'text-green-600'}`}>
+                        {isEdit ? '✅ Booking Updated!' : '🎉 Booking Successful!'}
                     </h4>
 
+                    <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        Booking ID: #{getDisplayId()}
+                    </div>
+
                     <p className="text-sm text-center mt-1">
-                        Your booking for{" "}
-                        <b>{bookingDetails.month} {bookingDetails.date}, {bookingDetails.year}</b>{" "}
-                        is now being reviewed.
+                        {isEdit 
+                            ? `Your booking for ${formatDate()} has been updated successfully.`
+                            : `Your booking for ${formatDate()} is now being reviewed.`
+                        }
                     </p>
+
+                    {bookingDetails.service && (
+                        <div className="text-xs text-gray-600 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+                            🎯 {bookingDetails.service}
+                        </div>
+                    )}
 
                     <p className="text-xs text-gray-500 text-center">
                         Please check your Phone Number{" "}
-                        <span className="text-green-600 px-1 font-medium">{bookingDetails.phoneNum}</span>
+                        <span className="text-green-600 px-1 font-medium">{bookingDetails.phoneNum || bookingDetails.phone_num || 'N/A'}</span>
                         or{" "}
-                        <b className="text-gray-900">{bookingDetails.email}</b>{" "}
+                        <b className="text-gray-900">{bookingDetails.email || 'N/A'}</b>{" "}
                         for the confirmation message.
                     </p>
 

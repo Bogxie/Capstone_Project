@@ -5,7 +5,6 @@ import { AnimatePresence } from 'framer-motion'
 import { SignIn } from './SignIn.jsx'
 import Prclogo from '../assets/images/lime_rbg2.png'
 
-
 export const Navbar = () => {
     const location = useLocation();
     const { currentUser, logout, showSignIn, setShowSignIn } = useAuth();
@@ -13,12 +12,22 @@ export const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [activeSection, setActiveSection] = useState("");
 
-    const NavItems = [
-        { path: "/AdminPage", role: "Admin", class: "block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white", label: "Bookings" },
-        { path: "/UserPage", class: "block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white", label: "My Bookings" },
-        { path: "/HelpSupport", class: "block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white", label: "Help and Support" },
-        { path: "/Settings", class: "block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white", label: "Settings" },
-    ]
+    const getNavItems = (role) => {
+        const baseItems = [
+            { path: "/UserPage", label: "My Bookings" },
+            { path: "/HelpSupport", label: "Help and Support" },
+            { path: "/Settings", label: "Settings" },
+        ];
+
+        if (role === 'Admin') {
+            return [
+                { path: "/AdminPage", label: "All Bookings" },
+                ...baseItems,
+            ];
+        }
+
+        return baseItems;
+    };
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
@@ -63,21 +72,28 @@ export const Navbar = () => {
         return () => observer?.disconnect();
     }, [location.pathname]);
 
+    const NavItems = getNavItems(currentUser?.role);
+
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-[250] bg-lime-600 backdrop-blur-md text-white font-semibold p-2 shadow-md border-b border-gray-800">
+            <nav className="fixed top-0 left-0 right-0 z-[250] bg-bg-secondary/90 backdrop-blur-md text-text-primary font-semibold p-2 shadow-md border-b border-lime-500/30">
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-4 relative flex-wrap lg:flex-row lg:flex-nowrap min-h-[50px]">
 
-                    <div className="flex items-center flex-shrink-0 z-10">
+                    {/* LEFT: Logo + Brand Name */}
+                    <div className="flex items-center flex-shrink-0 z-10 gap-2">
                         <img
                             src={Prclogo}
                             alt="logo"
                             className="h-12 w-auto object-contain rounded"
                         />
+                        <span className="text-xl font-bold tracking-wide hidden sm:block">
+                            <span className="text-text-primary">E-vent </span>
+                            <span className="text-lime-400">Flow</span>
+                        </span>
                     </div>
 
                     <button
-                        className="lg:hidden ms-auto border-2 border-amber-500 text-amber-500 rounded p-1.5 focus:outline-none hover:bg-amber-500 hover:text-white transition-colors z-10"
+                        className="lg:hidden ms-auto border-2 border-lime-500 text-lime-500 rounded p-1.5 focus:outline-none hover:bg-lime-500 hover:text-black transition-colors z-10"
                         type="button"
                         onClick={toggleMenu}
                     >
@@ -93,83 +109,94 @@ export const Navbar = () => {
                     <div className={`${isOpen ? 'block' : 'hidden'} w-full lg:contents`} id="navbarNav">
 
                         <ul className="flex flex-col lg:flex-row lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 mt-4 lg:mt-0 lg:space-x-8 space-y-1 lg:space-y-0 text-left lg:text-center items-stretch lg:items-center w-full lg:w-auto pb-4 lg:pb-0">
-                            <li className="border border-lime-500/30 rounded-lg lg:border-0">
+                            <li className="border border-lime-500/10 rounded-lg lg:border-0">
                                 <Link to="/"
-                                    className={`relative px-3 py-2 transition-colors duration-300 
+                                    className={`relative px-3 py-2 transition-colors duration-300 block
                                         ${activeSection === "home"
-                                            ? "text-yellow-400 underline underline-offset-4 decoration-2"
-                                            : "text-white hover:text-yellow-300"
+                                            ? "text-lime-400 underline underline-offset-4 decoration-2"
+                                            : "text-text-secondary hover:text-lime-400"
                                         }`}
                                 >
                                     Home
                                 </Link>
                             </li>
-                            <li className="sborder border-lime-500/30 rounded-lg lg:border-0">
+                            <li className="border border-lime-500/10 rounded-lg lg:border-0">
                                 <a
                                     href="#calendar"
-                                    className={`relative px-3 py-2 transition-colors duration-300 
+                                    className={`relative px-3 py-2 transition-colors duration-300 block
                                         ${activeSection === "calendar"
-                                            ? "text-yellow-400 underline underline-offset-4 decoration-2"
-                                            : "text-white hover:text-yellow-300"
+                                            ? "text-lime-400 underline underline-offset-4 decoration-2"
+                                            : "text-text-secondary hover:text-lime-400"
                                         }`}
                                 >
                                     Schedule
                                 </a>
                             </li>
-                            <li className="border border-lime-500/30 rounded-lg lg:border-0">
+                            <li className="border border-lime-500/10 rounded-lg lg:border-0">
                                 <a
                                     href="#reviews"
-                                    className={`relative px-3 py-2 transition-colors duration-300 
+                                    className={`relative px-3 py-2 transition-colors duration-300 block
                                         ${activeSection === "reviews"
-                                            ? "text-yellow-400 underline underline-offset-4 decoration-2"
-                                            : "text-white hover:text-yellow-300"
+                                            ? "text-lime-400 underline underline-offset-4 decoration-2"
+                                            : "text-text-secondary hover:text-lime-400"
                                         }`}
                                 >
                                     Reviews
                                 </a>
                             </li>
-                            <li className="border border-lime-500/30 rounded-lg lg:border-0">
-                                <a className="block py-2 px-3 text-gray-100 hover:text-amber-500 transition-colors" href="#">About Us</a>
+                            <li className="border border-lime-500/10 rounded-lg lg:border-0">
+                                <a className="block py-2 px-3 text-text-secondary hover:text-lime-400 transition-colors" href="#">About Us</a>
                             </li>
                         </ul>
                         <div className="flex justify-center mt-4 lg:mt-0 flex-shrink-0 lg:ms-auto z-10 w-full lg:w-auto">
                             {!currentUser ? (
                                 <button
-                                    className="w-full lg:w-auto px-6 py-2 bg-amber-500 text-[#1e1e1e] font-bold rounded-lg hover:bg-amber-600 transition-colors duration-200 shadow text-center flex items-center justify-center"
+                                    className="w-full lg:w-auto px-6 py-2 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white font-bold rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors duration-200 border border-gray-300 dark:border-zinc-700 shadow-md text-center flex items-center justify-center"
                                     onClick={handleModalToggle}
                                 >
                                     Sign In
                                 </button>
                             ) : (
                                 <div
-                                    className="relative group flex flex-col lg:flex-row items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg cursor-pointer border border-gray-700 w-full lg:w-auto transition-all"
+                                    className="relative group flex flex-col lg:flex-row items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 rounded-lg cursor-pointer border border-gray-300 dark:border-zinc-700 w-full lg:w-auto transition-all hover:border-lime-500/30"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 >
-
                                     <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start whitespace-nowrap">
                                         <div className="flex items-center gap-2">
-                                            <img src={currentUser.profile} className="w-7 h-7 rounded-full border border-amber-500 object-cover flex-shrink-0" alt="Profile" />
-                                            <span className="text-sm font-medium max-w-[150px] lg:max-w-[120px] truncate">{currentUser.username}</span>
+                                            <img src={currentUser.profile} className="w-7 h-7 rounded-full border border-lime-500 object-cover flex-shrink-0" alt="Profile" />
+                                            <span className="text-sm font-medium max-w-[150px] lg:max-w-[120px] truncate text-gray-900 dark:text-white">{currentUser.username}</span>
                                         </div>
 
-                                        <svg className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''} lg:group-hover:rotate-180 text-gray-400 group-hover:text-amber-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''} lg:group-hover:rotate-180 text-gray-500 dark:text-text-muted group-hover:text-lime-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </div>
 
+                                    {/* ✅ DROPDOWN - Solid background with better contrast */}
                                     <div className={`${isDropdownOpen ? 'block' : 'hidden'} lg:hidden lg:group-hover:block lg:absolute lg:right-0 lg:top-full lg:pt-1 z-50 w-full lg:w-48`}>
-                                        <ul className="bg-[#1e1e1e] border border-gray-700 rounded-lg shadow-xl py-2 text-left mt-2 lg:mt-0">
-                                            <hr className="border-gray-700 my-1 hidden lg:block" />
+                                        <ul className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl py-2 text-left mt-2 lg:mt-0">
+                                            <hr className="border-gray-200 dark:border-zinc-700 my-1 hidden lg:block" />
                                             {NavItems.map((items, i) => {
-                                                if (items.role && items.role !== currentUser.role) return null
                                                 return (
                                                     <li key={i}>
-                                                        <Link to={items.path} className={items.class}>{items.label}</Link>
+                                                        <Link 
+                                                            to={items.path} 
+                                                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700 hover:text-lime-600 dark:hover:text-lime-400 transition-colors"
+                                                            onClick={() => setIsDropdownOpen(false)}
+                                                        >
+                                                            {items.label}
+                                                        </Link>
                                                     </li>
                                                 )
                                             })}
                                             <li>
-                                                <a href="#" onClick={logout} className="block px-4 py-2 text-sm text-red-400 hover:bg-gray-800 hover:text-white border-t border-gray-700 lg:border-t-0 mt-1 lg:mt-0 pt-2 lg:pt-1">Log Out</a>
+                                                <a 
+                                                    href="#" 
+                                                    onClick={logout} 
+                                                    className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-zinc-700 border-t border-gray-200 dark:border-zinc-700 lg:border-t-0 mt-1 lg:mt-0 pt-2 lg:pt-1 transition-colors"
+                                                >
+                                                    Log Out
+                                                </a>
                                             </li>
                                         </ul>
                                     </div>

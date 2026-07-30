@@ -1,161 +1,174 @@
 import { useState } from "react";
 import { formatCurrency } from "../../assets/Utils/formatCurrency";
 import { colorStatus } from "../../assets/Utils/colorStatus";
-import { LocationPickerMap } from "../LocationPickerMap";
+import { AdminMapView } from "../AdminVIewMap";
 
 export const ViewModal = ({ booking, onClose }) => {
     const [showMap, setShowMap] = useState(false);
 
     if (!booking) return null;
 
-    // Helper para isalin ang Bootstrap status class (kung mayroon man) papuntang Tailwind colors
-    const getStatusStyles = (status) => {
-        const bootstrapClass = colorStatus(status);
-        if (bootstrapClass.includes("success")) return "bg-green-500/10 text-green-400 border border-green-500/30";
-        if (bootstrapClass.includes("warning")) return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
-        if (bootstrapClass.includes("danger")) return "bg-red-500/10 text-red-400 border border-red-500/30";
-        return "bg-blue-500/10 text-blue-400 border border-blue-500/30";
+    const displayId = booking.display_id || booking.bookID || `BK-${String(booking.booking_id).padStart(6, '0')}`;
+    const fullName = booking.full_name || booking.fullName || 'N/A';
+    const phoneNum = booking.phone_num || booking.phoneNum || 'N/A';
+    const dateDisplay = booking.date || booking.day || 'N/A';
+
+    const getTimeDisplay = () => {
+        if (booking.timeStart && booking.timeStartAmPm && booking.timeEnd && booking.timeEndAmPm) {
+            return `${booking.timeStart} ${booking.timeStartAmPm} - ${booking.timeEnd} ${booking.timeEndAmPm}`;
+        }
+        if (booking.time_start && booking.time_end) {
+            return `${booking.time_start} - ${booking.time_end}`;
+        }
+        return 'N/A';
     };
 
+    const paymentMethod = booking.payment_method || booking.paymentMethod || 'N/A';
+    const rentalFee = booking.rental_fee || booking.rentalFee || 0;
+    const deliveryFee = booking.delivery_fee || booking.deliveryFee || 0;
+    const tax = booking.tax || 0;
+    const downpayment = booking.downpayment || 0;
+    const total = booking.total || 0;
+
+    const paymentRows = [
+        { label: "Rental Fee:", value: rentalFee },
+        { label: "Delivery Fee:", value: deliveryFee },
+        { label: "Tax:", value: tax },
+    ];
+
     return (
-        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            {/* Modal Dialog Container */}
-            <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 text-white shadow-2xl overflow-hidden">
-                
-                {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
-                            <i className="bi bi-info-circle-fill text-lg"></i>
-                        </div>
+        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+
+                {/* Header */}
+                <div className="flex justify-between items-center px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+                    <div className="flex items-center gap-2 font-semibold text-sm text-white">
+                        ℹ️
                         <div>
-                            <h5 className="text-base font-semibold tracking-wide text-zinc-100">Booking Reservation</h5>
-                            <p className="text-xs text-zinc-500 font-mono">{booking.bookID}</p>
+                            <h5 className="mb-0 text-sm font-bold text-white">Booking Reservation</h5>
+                            <p className="mb-0 text-lime-400 text-xs">{displayId}</p>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-white transition-colors"
-                        aria-label="Close"
+                        className="text-zinc-400 hover:text-white transition-colors"
                     >
-                        <i className="bi bi-x-lg text-lg flex"></i>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
-                {/* Modal Body (Scrollable kung mahaba ang content) */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 hide-scrollbar">
-                    
-                    {/* User Summary Section */}
-                    <div className="flex items-start justify-between gap-4 rounded-lg bg-zinc-900/50 p-3 border border-zinc-900">
-                        <div className="min-w-0 flex-1">
-                            <h6 className="truncate text-base font-medium text-zinc-200">{booking.fullName}</h6>
-                            <p className="truncate text-xs text-zinc-400 mt-0.5">
-                                {booking.email} <span className="text-zinc-600">·</span> {booking.phoneNum}
-                            </p>
+                <div className="p-3 max-h-[75vh] overflow-y-auto hide-scrollbar">
+                    <h6 className="text-center font-bold text-sm text-lime-400 mb-2">GENERAL INFORMATION</h6>
+
+                    {/* User Info */}
+                    <div className="flex justify-between items-center bg-zinc-800 rounded-md px-3 py-2 mb-2">
+                        <div className="overflow-hidden">
+                            <p className="text-white text-sm font-semibold mb-0">{fullName}</p>
+                            <p className="text-zinc-400 text-xs mb-0">{booking.email} · {phoneNum}</p>
                         </div>
-                        <span className="shrink-0 inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/20">
-                            {booking.description}
+                        <span className="bg-lime-500 text-black text-xs font-semibold px-2 py-0.5 rounded ml-2 shrink-0">
+                            {booking.description || 'N/A'}
                         </span>
                     </div>
 
-                    {/* Booking Logistics Grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg bg-zinc-900/30 border border-zinc-900 p-3">
-                            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Date</p>
-                            <p className="text-sm font-medium text-zinc-300 mt-1">{booking.month} {booking.date}, {booking.year}</p>
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">📅 Date</p>
+                            <p className="text-lime-400 text-xs mb-0">{booking.month} {dateDisplay}, {booking.year}</p>
                         </div>
-                        <div className="rounded-lg bg-zinc-900/30 border border-zinc-900 p-3">
-                            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Time</p>
-                            <p className="text-sm font-medium text-zinc-300 mt-1">
-                                {booking.timeStart} {booking.timeStartAmPm} - {booking.timeEnd} {booking.timeEndAmPm}
-                            </p>
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">🕐 Time</p>
+                            <p className="text-lime-400 text-xs mb-0">{getTimeDisplay()}</p>
                         </div>
-                        
-                        {/* Full Width Venue Section */}
-                        <div className="col-span-2 rounded-lg bg-zinc-900/30 border border-zinc-900 p-3">
-                            <div className="flex items-center justify-between mb-1">
-                                <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Venue</p>
-                                
-                                {/* Map Toggle Button */}
+
+                        {/* Venue */}
+                        <div className="col-span-2 bg-zinc-800 rounded-md p-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="text-white text-xs mb-0">📍 Venue</p>
                                 <button
                                     type="button"
                                     onClick={() => setShowMap(!showMap)}
-                                    className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors focus:outline-none"
+                                    className="text-xs text-lime-400 hover:text-lime-300 transition-colors font-semibold"
                                 >
-                                    {showMap ? "🙈 Hide Map" : "🗺️ View on Map"}
+                                    {showMap ? "Hide Map ▲" : "Show Map ▼"}
                                 </button>
                             </div>
-                            <p className="text-sm font-medium text-zinc-300 break-words">{booking.venue}</p>
                             
-                            {/* Animated Location Picker Map Container */}
-                            {showMap && (
-                                <div className="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 p-1 animate-slide-down">
-                                    <LocationPickerMap
-                                        initialVenue={booking.venue}
-                                        initialLat={booking.lat || null} 
-                                        initialLng={booking.lng || null}
-                                        onLocationSelect={(locData) => {
-                                            console.log("Selected coordinates inside modal:", locData);
-                                        }}
+                            {!showMap ? (
+                                <div>
+                                    <p className="text-zinc-300 text-xs break-words">{booking.venue || 'No venue provided'}</p>
+                                    <p className="text-lime-400 text-xs mt-0.5">📍 {booking.municipality || 'No municipality'}</p>
+                                </div>
+                            ) : (
+                                <div className="mt-1">
+                                    <AdminMapView
+                                        lat={booking.lat}
+                                        lng={booking.lng}
+                                        venue={booking.venue}
+                                        municipality={booking.municipality}
                                     />
                                 </div>
                             )}
                         </div>
 
-                        <div className="rounded-lg bg-zinc-900/30 border border-zinc-900 p-3 flex flex-col justify-between">
-                            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-1">Status</p>
-                            <div>
-                                <span className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider ${getStatusStyles(booking.status)}`}>
-                                    {booking.status}
-                                </span>
-                            </div>
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">⚡ Status</p>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-black ${colorStatus(booking.status)}`}>
+                                {booking.status || 'Pending'}
+                            </span>
                         </div>
-                        <div className="rounded-lg bg-zinc-900/30 border border-zinc-900 p-3">
-                            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Payment</p>
-                            <p className="text-sm font-medium text-zinc-300 mt-1">{booking.paymentMethod}</p>
+                        <div className="bg-zinc-800 rounded-md p-2">
+                            <p className="text-white text-xs mb-0.5">💳 Payment</p>
+                            <p className="text-lime-400 text-sm font-medium mb-0">{paymentMethod}</p>
                         </div>
                     </div>
 
-                    {/* Payment Breakdown Table */}
-                    <div className="space-y-2.5">
-                        <h6 className="text-xs font-bold uppercase tracking-widest text-zinc-400 border-b border-zinc-800 pb-2">Payment Details</h6>
-                        <div className="divide-y divide-zinc-900 text-sm">
-                            <div className="flex justify-between py-2 text-zinc-400">
-                                <span>Rental Fee</span>
-                                <span className="font-medium text-zinc-200">₱{formatCurrency(booking.rentalFee)}</span>
+                    {/* Payment Details */}
+                    <div className="border border-zinc-700 rounded-lg mb-2 overflow-hidden">
+                        <div className="bg-zinc-800 text-center py-1.5 border-b border-zinc-700">
+                            <h6 className="font-bold text-sm text-lime-400 mb-0">PAYMENT DETAILS</h6>
+                        </div>
+                        <div className="px-3 py-2 space-y-1 text-sm">
+                            {paymentRows.map((item) => (
+                                <div key={item.label} className="flex justify-between">
+                                    <span className="text-zinc-400">{item.label}</span>
+                                    <span className="font-medium text-white">₱{formatCurrency(item.value)}</span>
+                                </div>
+                            ))}
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Subtotal:</span>
+                                <span className="font-medium text-white">₱{formatCurrency(Number(rentalFee) + Number(deliveryFee))}</span>
                             </div>
-                            <div className="flex justify-between py-2 text-zinc-400">
-                                <span>Delivery Fee</span>
-                                <span className="font-medium text-zinc-200">₱{formatCurrency(booking.deliveryFee)}</span>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Tax (12%):</span>
+                                <span className="font-medium text-white">₱{formatCurrency(tax)}</span>
                             </div>
-                            <div className="flex justify-between py-2 text-zinc-400">
-                                <span>Tax</span>
-                                <span className="font-medium text-zinc-200">₱{formatCurrency(booking.tax)}</span>
+                            <div className="flex justify-between border-t border-zinc-700 pt-1 mt-1">
+                                <span className="font-bold text-white">Total:</span>
+                                <span className="font-bold text-lime-400">₱{formatCurrency(total)}</span>
                             </div>
-                            <div className="flex justify-between py-2 text-zinc-400">
-                                <span>Downpayment</span>
-                                <span className="font-semibold text-red-400 font-mono">-{formatCurrency(booking.downpayment)}</span>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-400">Downpayment:</span>
+                                <span className="text-red-400 font-medium">- ₱{formatCurrency(downpayment)}</span>
                             </div>
-                            {/* Total Remainder Row */}
-                            <div className="flex justify-between items-center py-3 bg-zinc-900/30 px-3 rounded-lg border border-zinc-900/50 mt-2">
-                                <span className="font-semibold text-zinc-300">Remaining Total:</span>
-                                <span className="text-xl font-bold text-amber-400 font-mono">
-                                    ₱{formatCurrency(booking.total - booking.downpayment)}
-                                </span>
+                            <div className="flex justify-between border-t border-zinc-700 pt-1 mt-1">
+                                <span className="font-bold text-green-400">Remaining Balance:</span>
+                                <span className="font-bold text-green-400">₱{formatCurrency(Number(total) - Number(downpayment))}</span>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Modal Footer Button */}
-                <div className="border-t border-zinc-800 p-4">
+                    {/* Close Button */}
                     <button
                         type="button"
-                        className="w-full rounded-lg bg-zinc-800 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-700 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-zinc-600"
+                        className="w-full py-2 text-sm font-semibold rounded-lg bg-lime-500 text-black hover:bg-lime-400 transition-colors"
                         onClick={onClose}
                     >
-                        Close Details
+                        Close
                     </button>
                 </div>
             </div>

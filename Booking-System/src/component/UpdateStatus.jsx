@@ -2,45 +2,51 @@ export const UpdateStatus = ({
     status,
     handleConfirmation,
     handleComplete,
+    handleRevert,
 }) => {
-    const configs = {
-        Pending: {
-            text: "Confirm",
-            onClick: handleConfirmation,
-            className:
-                "border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white",
-        },
-        Confirmed: {
-            text: "Complete",
-            onClick: handleComplete,
-            className:
-                "border-sky-500 text-sky-500 hover:bg-sky-500 hover:text-white",
-        },
-        Complete: {
-            text: "Completed",
-            disabled: true,
-            className:
-                "border-green-500 text-green-500 opacity-70 cursor-not-allowed",
-        },
-        Cancelled: {
-            text: "Cancelled",
-            disabled: true,
-            className:
-                "border-red-500 text-red-500 opacity-70 cursor-not-allowed",
-        },
-    };
+    // ✅ Pending → Confirm only
+    if (status === 'Pending') {
+        return (
+            <button
+                onClick={handleConfirmation}
+                className="w-full rounded-md border border-yellow-500 text-yellow-500 px-3 py-1.5 text-[10px] transition hover:bg-yellow-500 hover:text-white"
+            >
+                Confirm
+            </button>
+        );
+    }
 
-    const config = configs[status];
+    // ✅ Confirmed → Complete + Revert
+    if (status === 'Confirmed') {
+        return (
+            <div className="flex gap-1 w-full">
+                <button
+                    onClick={handleComplete}
+                    className="flex-1 rounded-md border border-sky-500 text-sky-500 px-2 py-1.5 text-[10px] transition hover:bg-sky-500 hover:text-white"
+                >
+                    Complete
+                </button>
+                <button
+                    onClick={handleRevert}
+                    className="flex-1 rounded-md border border-gray-500 text-gray-500 px-2 py-1.5 text-[10px] transition hover:bg-gray-500 hover:text-white"
+                >
+                    Revert
+                </button>
+            </div>
+        );
+    }
 
-    if (!config) return null;
+    // ✅ Completed or Cancelled → Revert only
+    if (status === 'Completed' || status === 'Cancelled') {
+        return (
+            <button
+                onClick={handleRevert}
+                className="w-full rounded-md border border-gray-500 text-gray-500 px-3 py-1.5 text-[10px] transition hover:bg-gray-500 hover:text-white"
+            >
+                Revert to Pending
+            </button>
+        );
+    }
 
-    return (
-        <button
-            onClick={config.onClick}
-            disabled={config.disabled}
-            className={`w-full rounded-md border px-4 py-2 transition ${config.className}`}
-        >
-            {config.text}
-        </button>
-    );
+    return null;
 };
