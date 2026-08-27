@@ -6,8 +6,9 @@ import { StarRating } from "./StarRating";
 import { ImageUploader } from "./ImageUploader";
 
 export const RatingModal = ({ booking, existingFeedback, onClose }) => {
-    const { saveFeedback } = useFeedback();
+    const { saveFeedback, deleteFeedback } = useFeedback();  // ✅ Add deleteFeedback
     const { currentUser } = useAuth();
+    const [isDeleting, setIsDeleting] = useState(false);
     
     const [previewUrl, setPreviewUrl] = useState(
         existingFeedback?.imageUrls || 
@@ -23,6 +24,7 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
         existingFeedback ? (existingFeedback.isAnonymous || existingFeedback.is_anonymous || false) : false
     );
     const [isEditable] = useState(!!existingFeedback);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         return () => {
@@ -93,6 +95,20 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
         }
     };
 
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await deleteFeedback(booking.booking_id || booking.bookID);
+            setShowDeleteConfirm(false);
+            onClose();
+        } catch (error) {
+            console.error('Error deleting feedback:', error);
+            alert('Failed to delete feedback. Please try again.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const displayName = () => {
         const name = currentUser?.username || 'User';
         
@@ -105,29 +121,66 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
 
     if (!booking) return null;
 
+    // ✅ Delete confirmation view
+    if (showDeleteConfirm) {
+        return (
+            <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-[#23262f]/95 p-2 sm:p-4">
+                <div className="relative w-full max-w-md rounded-xl border border-red-500/50 bg-[#2d303a] p-5 text-center text-white shadow-2xl">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="text-5xl">🗑️</div>
+                        <h5 className="text-lg font-bold text-red-400">Delete Feedback?</h5>
+                        <p className="text-sm text-zinc-300">
+                            Are you sure you want to delete your feedback for booking?
+                        </p>
+                        <span className="inline-block rounded bg-[#23262f] px-3 py-1 text-xs font-semibold text-white border border-[#3a3d48]">
+                            {booking.display_id || booking.bookID}
+                        </span>
+                        <p className="text-xs text-red-400">This action cannot be undone.</p>
+                        <div className="flex gap-2 w-full mt-2">
+                            <button
+                                className="flex-1 py-2 text-sm font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                            </button>
+                            <button
+                                className="flex-1 py-2 text-sm font-semibold rounded-lg bg-[#23262f] border border-[#3a3d48] text-white hover:bg-[#2d303a] transition-colors"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ Main Rating Modal
     return (
-        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-            <div className="relative w-full max-w-[90%] hide-scrollbar sm:max-w-md max-h-[95vh] overflow-y-auto rounded-lg border border-amber-500 bg-neutral-900 p-3 sm:p-6 text-center text-white shadow-xl">
+        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-[#23262f]/95 p-2 sm:p-4">
+            <div className="relative w-full max-w-[85%] sm:max-w-sm max-h-[90vh] overflow-y-auto hide-scrollbar rounded-xl border border-[#b6ff2e]/30 bg-[#2d303a] p-4 sm:p-5 text-center text-white shadow-2xl">
                 
                 {/* Modal Header */}
-                <div className="relative mb-2 flex flex-col items-center pb-2 border-b border-amber-500">
-                    <h5 className="text-base sm:text-xl font-bold text-amber-500">
+                <div className="relative mb-2 flex flex-col items-center pb-2 border-b border-[#b6ff2e]/20">
+                    <h5 className="text-sm sm:text-lg font-bold text-[#b6ff2e]">
                         {isEditable ? "Edit Your Rating" : "Rate Us"}
                     </h5>
                     <button
                         type="button"
-                        className="absolute top-0 right-0 text-neutral-400 hover:text-white transition-colors text-2xl font-semibold w-8 h-8 flex items-center justify-center"
+                        className="absolute top-0 right-0 text-zinc-400 hover:text-white transition-colors text-xl font-semibold w-7 h-7 flex items-center justify-center"
                         onClick={onClose}
                     >
-                        &times;
+                        ✕
                     </button>
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex flex-col items-center gap-2 sm:gap-3">
+                <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                     
-                    {/* Star Rating - Mas maliit sa SM */}
-                    <div className="mb-1 sm:mb-4">
+                    {/* Star Rating */}
+                    <div className="mb-0.5 sm:mb-2">
                         <StarRating
                             rating={rating}
                             hover={hover}
@@ -137,21 +190,21 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
                     </div>
 
                     {/* Identity Section */}
-                    <div className="w-full flex items-center justify-between mb-1 sm:mb-4 px-1">
-                        <div className="flex items-center text-amber-500 font-semibold text-xs sm:text-sm">
-                            <i className="bi bi-person-circle mr-1.5 text-sm sm:text-base"></i>
-                            <span className="truncate max-w-[100px] sm:max-w-none">{displayName()}</span>
+                    <div className="w-full flex items-center justify-between mb-0.5 sm:mb-2 px-0.5">
+                        <div className="flex items-center text-[#b6ff2e] font-semibold text-[10px] sm:text-xs">
+                            <span className="mr-1 text-sm">👤</span>
+                            <span className="truncate max-w-[80px] sm:max-w-none">{displayName()}</span>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                             <input
-                                className="h-3.5 w-3.5 sm:h-4 sm:w-4 cursor-pointer rounded border-neutral-600 bg-neutral-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-neutral-900"
+                                className="h-3 w-3 sm:h-3.5 sm:w-3.5 cursor-pointer rounded border-[#3a3d48] bg-[#23262f] text-[#b6ff2e] focus:ring-[#b6ff2e] focus:ring-offset-[#23262f]"
                                 type="checkbox"
                                 id="anonymousToggle"
                                 checked={isAnonymous}
                                 onChange={(e) => setIsAnonymous(e.target.checked)}
                             />
                             <label
-                                className="cursor-pointer text-[10px] sm:text-xs text-neutral-400 hover:text-neutral-300 select-none"
+                                className="cursor-pointer text-[9px] sm:text-[10px] text-zinc-400 hover:text-zinc-300 select-none"
                                 htmlFor="anonymousToggle"
                             >
                                 Anonymous
@@ -159,8 +212,8 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Image Uploader - Mas maliit sa SM */}
-                    <div className="w-full mb-1 sm:mb-4">
+                    {/* Image Uploader */}
+                    <div className="w-full mb-0.5 sm:mb-2">
                         <ImageUploader
                             previewUrl={previewUrl}
                             removeImage={removeImage}
@@ -168,24 +221,37 @@ export const RatingModal = ({ booking, existingFeedback, onClose }) => {
                         />
                     </div>
 
-                    {/* Comment - Mas maliit sa SM */}
+                    {/* Comment */}
                     <textarea
-                        className="w-full min-h-[70px] sm:min-h-[100px] rounded-md bg-neutral-800 border border-neutral-700 p-2 sm:p-3 text-white placeholder-neutral-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all mb-1 sm:mb-4 text-xs sm:text-sm resize-none"
+                        className="w-full min-h-[60px] sm:min-h-[80px] rounded-lg bg-[#23262f] border border-[#3a3d48] p-2 sm:p-2.5 text-white placeholder-zinc-500 focus:border-[#b6ff2e] focus:ring-1 focus:ring-[#b6ff2e] outline-none transition-all mb-0.5 sm:mb-2 text-[10px] sm:text-sm resize-none"
                         rows="2 sm:rows-3"
-                        placeholder="Tell us your experience of our service"
+                        placeholder="Tell us your experience..."
                         maxLength={500}
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                     />
 
-                    {/* Submit Button - Mas maliit sa SM */}
-                    <button
-                        className="w-full rounded-md bg-amber-500 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-neutral-950 transition-all hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={handleSubmit}
-                        disabled={rating === 0}
-                    >
-                        {isEditable ? "Update Rating" : "Submit Feedback"}
-                    </button>
+                    {/* Buttons */}
+                    <div className="flex gap-2 w-full">
+                        <button
+                            className="flex-1 rounded-lg bg-[#b6ff2e] py-1.5 sm:py-2 text-[10px] sm:text-sm font-bold text-[#23262f] transition-all hover:bg-[#a3e829] disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleSubmit}
+                            disabled={rating === 0}
+                        >
+                            {isEditable ? "Update Rating" : "Submit Feedback"}
+                        </button>
+                    </div>
+
+                    {/* ✅ Delete button (only for existing feedback) */}
+                    {isEditable && (
+                        <button
+                            type="button"
+                            className="w-full text-xs text-red-400 hover:text-red-300 transition-colors mt-1"
+                            onClick={() => setShowDeleteConfirm(true)}
+                        >
+                            🗑️ Delete this review
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

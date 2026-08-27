@@ -1,4 +1,4 @@
-import { generateReceiptImage } from '../assets/utils/generateReceipt';
+import { generateReceiptImage } from '../assets/utils/generateReceipt.js';
 
 export const BookingSuccess = ({ bookingDetails, onClose, isEdit = false }) => {
     if (!bookingDetails) return null;

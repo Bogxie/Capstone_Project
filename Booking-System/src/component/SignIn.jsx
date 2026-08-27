@@ -192,13 +192,13 @@ export const SignIn = ({ onClose }) => {
         }, 2000);
     };
 
-    // ✅ SOLID - White sa light, Dark sa dark
-    const inputStyle = "w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all mb-2 text-sm";
-    const labelStyle = "block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1";
+    // ✅ UPDATED: Solid dark theme
+    const inputStyle = "w-full px-3 py-2 bg-[#23262f] border border-[#3a3d48] rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-[#b6ff2e] focus:ring-2 focus:ring-[#b6ff2e]/20 transition-all mb-2 text-sm";
+    const labelStyle = "block text-xs font-semibold text-zinc-400 mb-1";
 
     return (
         <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+            className="fixed inset-0 bg-[#23262f]/95 flex items-center justify-center z-[9999] p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -213,19 +213,18 @@ export const SignIn = ({ onClose }) => {
                     stiffness: 300,
                     damping: 25
                 }}
-                // ✅ WHITE sa light mode, DARK sa dark mode
-                className="w-full max-w-md bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-6 shadow-2xl relative"
+                className="w-full max-w-md bg-[#2d303a] border border-[#3a3d48] rounded-xl p-6 shadow-2xl relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-200 dark:border-zinc-700 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-[#3a3d48] pb-3 mb-4">
                     <h5 className="text-lg font-bold tracking-wide">
-                        <span className="text-gray-900 dark:text-white">E-vent </span>
-                        <span className="text-lime-500 dark:text-lime-400">Flow</span>
+                        <span className="text-white">E-vent </span>
+                        <span className="text-[#b6ff2e]">Flow</span>
                     </h5>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-lime-500 dark:hover:text-lime-400 transition-colors focus:outline-none text-xl"
+                        className="text-zinc-400 hover:text-[#b6ff2e] transition-colors focus:outline-none text-xl"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -237,8 +236,8 @@ export const SignIn = ({ onClose }) => {
                 {message && (
                     <div className={`mb-4 p-3 rounded-lg text-sm font-medium text-center ${
                         message.includes("successful") 
-                            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 text-green-700 dark:text-green-400"
-                            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/30 text-red-600 dark:text-red-400"
+                            ? "bg-green-500/20 border border-green-500/30 text-green-400"
+                            : "bg-red-500/20 border border-red-500/30 text-red-400"
                     }`}>
                         {message}
                     </div>
@@ -246,7 +245,7 @@ export const SignIn = ({ onClose }) => {
 
                 {view === "SignIn" && (
                     <form onSubmit={handleLogin}>
-                        <h2 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">Sign In</h2>
+                        <h2 className="text-xl font-bold text-center mb-4 text-white">Sign In</h2>
 
                         <label className={labelStyle}>Email</label>
                         <input
@@ -275,7 +274,7 @@ export const SignIn = ({ onClose }) => {
                         <div className="text-center mb-4">
                             <span
                                 onClick={() => handleViewChange("forgot")}
-                                className="text-xs text-lime-600 dark:text-lime-400 hover:text-lime-700 dark:hover:text-lime-300 hover:underline cursor-pointer transition-all"
+                                className="text-xs text-[#b6ff2e] hover:text-[#a3e829] hover:underline cursor-pointer transition-all"
                             >
                                 Forgot Password?
                             </span>
@@ -284,7 +283,7 @@ export const SignIn = ({ onClose }) => {
                         <button 
                             type="submit" 
                             disabled={isLoading}
-                            className="w-full py-2.5 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-lime-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-2.5 bg-[#b6ff2e] hover:bg-[#a3e829] text-[#23262f] font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-[#b6ff2e]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
                         </button>
@@ -293,12 +292,12 @@ export const SignIn = ({ onClose }) => {
                             type="button"
                             onClick={() => handleViewChange("SignUp")}
                             disabled={isLoading}
-                            className="w-full mt-2 py-2.5 bg-transparent border border-gray-300 dark:border-zinc-600 hover:border-lime-500 text-gray-600 dark:text-zinc-300 hover:text-lime-600 dark:hover:text-lime-400 font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
+                            className="w-full mt-2 py-2.5 bg-transparent border border-[#3a3d48] hover:border-[#b6ff2e] text-zinc-300 hover:text-[#b6ff2e] font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
                         >
                             Create Account
                         </button>
 
-                        <small className="block text-center mt-3 text-xs text-gray-500 dark:text-zinc-500">
+                        <small className="block text-center mt-3 text-xs text-zinc-500">
                             Don't have an account?
                         </small>
                     </form>
@@ -306,7 +305,7 @@ export const SignIn = ({ onClose }) => {
 
                 {view === "SignUp" && (
                     <form onSubmit={handleRegister}>
-                        <h2 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">Create Account</h2>
+                        <h2 className="text-xl font-bold text-center mb-4 text-white">Create Account</h2>
 
                         <label className={labelStyle}>Username</label>
                         <input
@@ -319,7 +318,7 @@ export const SignIn = ({ onClose }) => {
                             required
                             disabled={isLoading}
                         />
-                        <p className="text-[10px] text-gray-500 dark:text-zinc-500 -mt-1 mb-2">
+                        <p className="text-[10px] text-zinc-500 -mt-1 mb-2">
                             * 5-12 characters, letters, numbers, underscores only
                         </p>
 
@@ -346,7 +345,7 @@ export const SignIn = ({ onClose }) => {
                             required
                             disabled={isLoading}
                         />
-                        <p className="text-[10px] text-gray-500 dark:text-zinc-500 -mt-1 mb-2">
+                        <p className="text-[10px] text-zinc-500 -mt-1 mb-2">
                             * 8+ chars, uppercase, lowercase, number, special character
                         </p>
 
@@ -365,7 +364,7 @@ export const SignIn = ({ onClose }) => {
                         <button 
                             type="submit" 
                             disabled={isLoading}
-                            className="w-full py-2.5 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-lime-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-2.5 bg-[#b6ff2e] hover:bg-[#a3e829] text-[#23262f] font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-[#b6ff2e]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? "Creating account..." : "Sign Up"}
                         </button>
@@ -374,12 +373,12 @@ export const SignIn = ({ onClose }) => {
                             type="button"
                             onClick={() => handleViewChange("SignIn")}
                             disabled={isLoading}
-                            className="w-full mt-2 py-2.5 bg-transparent border border-gray-300 dark:border-zinc-600 hover:border-lime-500 text-gray-600 dark:text-zinc-300 hover:text-lime-600 dark:hover:text-lime-400 font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
+                            className="w-full mt-2 py-2.5 bg-transparent border border-[#3a3d48] hover:border-[#b6ff2e] text-zinc-300 hover:text-[#b6ff2e] font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
                         >
                             Back to Sign In
                         </button>
 
-                        <small className="block text-center mt-3 text-xs text-gray-500 dark:text-zinc-500">
+                        <small className="block text-center mt-3 text-xs text-zinc-500">
                             Already have an account?
                         </small>
                     </form>
@@ -387,8 +386,8 @@ export const SignIn = ({ onClose }) => {
 
                 {view === "forgot" && (
                     <form onSubmit={handleForgot}>
-                        <h2 className="text-xl font-bold text-center mb-2 text-gray-900 dark:text-white">Forgot Password?</h2>
-                        <p className="text-xs text-gray-500 dark:text-zinc-400 text-center mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+                        <h2 className="text-xl font-bold text-center mb-2 text-white">Forgot Password?</h2>
+                        <p className="text-xs text-zinc-400 text-center mb-4">Enter your email address and we'll send you a link to reset your password.</p>
 
                         <input
                             type="email"
@@ -404,7 +403,7 @@ export const SignIn = ({ onClose }) => {
                         <button 
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-2.5 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-lime-500/20 disabled:opacity-50"
+                            className="w-full py-2.5 bg-[#b6ff2e] hover:bg-[#a3e829] text-[#23262f] font-bold rounded-lg transition-colors duration-200 shadow-lg shadow-[#b6ff2e]/20 disabled:opacity-50"
                         >
                             {isLoading ? "Sending..." : "Send Reset Link"}
                         </button>
@@ -413,7 +412,7 @@ export const SignIn = ({ onClose }) => {
                             type="button"
                             onClick={() => handleViewChange("SignIn")}
                             disabled={isLoading}
-                            className="w-full mt-2 py-2.5 bg-transparent border border-gray-300 dark:border-zinc-600 hover:border-lime-500 text-gray-600 dark:text-zinc-300 hover:text-lime-600 dark:hover:text-lime-400 font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
+                            className="w-full mt-2 py-2.5 bg-transparent border border-[#3a3d48] hover:border-[#b6ff2e] text-zinc-300 hover:text-[#b6ff2e] font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
                         >
                             Back to Sign In
                         </button>

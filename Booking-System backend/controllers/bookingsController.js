@@ -21,13 +21,15 @@ const emitBookingsChanged = (req, payload) => {
         console.warn('⚠️ io not found on app instance — skipping real-time broadcast');
     }
 };
-
 export const getAllBookings = async (req, res) => {
     try {
         const allBookings = await db
             .select()
             .from(bookings)
             .orderBy(desc(bookings.created_at));
+
+        const currentUser = req.user;
+        const isAdmin = currentUser?.user_role === 'Admin';
 
         const formatted = allBookings.map(booking => {
             let timeStart = '';
@@ -46,16 +48,31 @@ export const getAllBookings = async (req, res) => {
                 timeEndAmPm = parts[1] || '';
             }
 
+            const isOwner = currentUser && booking.user_id === currentUser.user_id;
+
+            if (isAdmin || isOwner) {
+                return {
+                    ...booking,
+                    bookID: `BK-${String(booking.booking_id).padStart(6, '0')}`,
+                    display_id: `BK-${String(booking.booking_id).padStart(6, '0')}`,
+                    timeStart,
+                    timeStartAmPm,
+                    timeEnd,
+                    timeEndAmPm,
+                    date: booking.day,
+                    day: booking.day,
+                };
+            }
+
             return {
-                ...booking,
-                bookID: `BK-${String(booking.booking_id).padStart(6, '0')}`,
-                display_id: `BK-${String(booking.booking_id).padStart(6, '0')}`,
-                timeStart: timeStart,
-                timeStartAmPm: timeStartAmPm,
-                timeEnd: timeEnd,
-                timeEndAmPm: timeEndAmPm,
-                date: booking.day,
+                booking_id: booking.booking_id,
+                service: booking.service,
+                status: booking.status,
+                booking_date: booking.booking_date,
+                month: booking.month,
                 day: booking.day,
+                year: booking.year,
+                date: booking.day,
             };
         });
 
@@ -132,9 +149,6 @@ export const createBooking = async (req, res) => {
 
         const bookingId = result[0]?.booking_id;
 
-        // ✅ Broadcast sa lahat ng connected clients (admin + users)
-        // para automatic mag-refresh yung Calendar/AdminPage/UserPage
-        // nang hindi kailangan mag-manual refresh.
         emitBookingsChanged(req, {
             type: 'created',
             bookingId,
@@ -153,6 +167,14 @@ export const createBooking = async (req, res) => {
         });
 
     } catch (err) {
+        // ✅ 23505 = PostgreSQL unique constraint violation
+        if (err.code === '23505' && err.constraint === 'idx_bookings_active_unique') {
+            return res.status(409).json({
+                success: false,
+                error: "This slot has already been booked. Please choose another date or service."
+            });
+        }
+
         console.error("Error creating booking:", err);
         res.status(500).json({
             success: false,
@@ -193,7 +215,6 @@ export const updateBookingStatus = async (req, res) => {
 
         const updated = result[0];
 
-        // ✅ Broadcast status change sa lahat ng clients
         emitBookingsChanged(req, {
             type: 'status-updated',
             bookingId: updated.booking_id,
@@ -221,7 +242,7 @@ export const updateBooking = async (req, res) => {
     try {
         const { id } = req.params;
         const data = req.body;
-        
+
         // ✅ Check if booking exists
         const existing = await db
             .select()
@@ -239,7 +260,7 @@ export const updateBooking = async (req, res) => {
         const current = existing[0];
         const rentalFee = data.rentalFee || data.rental_fee || current.rental_fee;
         const deliveryFee = data.deliveryFee || data.delivery_fee || current.delivery_fee;
-        
+
         // ✅ Recalculate totals
         const { subtotal, tax, total } = calculateTotals(rentalFee, deliveryFee);
 

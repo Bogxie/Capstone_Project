@@ -12,8 +12,10 @@ import { router as userRouter } from './routes/userRoutes.js'
 import { router as bookingRouter } from './routes/bookingRoutes.js'
 import { router as feedbackRouter } from './routes/feedbackRoutes.js'
 import { router as uploadRouter } from './routes/uploadRoutes.js' 
+import { router as blackoutRouter } from './routes/blackoutRoutes.js'
 import { initChatSocket } from './socket/chatSocket.js'
 import { initBookingSocket } from './socket/tempBooking.js'
+import { socketAuthMiddleware } from './socket/socketAuthMiddleware.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,16 +24,13 @@ dotenv.config();
 
 const app = express();
 
+const routers = [authRouter, serviceRouter, municipalityRouter, userRouter, bookingRouter, feedbackRouter, uploadRouter, blackoutRouter]
+
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api', authRouter);
-app.use('/api', serviceRouter);
-app.use('/api', municipalityRouter);
-app.use('/api', userRouter);
-app.use('/api', bookingRouter);
-app.use('/api', feedbackRouter);
-app.use('/api', uploadRouter);  
+
+routers.forEach(router => app.use('/api', router));
 
 const server = http.createServer(app)
 
@@ -44,6 +43,7 @@ const io = new Server(server, {
 
 app.set('io', io);
 
+io.use(socketAuthMiddleware);
 initChatSocket(io);
 initBookingSocket(io);
 

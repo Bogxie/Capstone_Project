@@ -4,6 +4,7 @@ import { users } from "../models/schema.js";
 import { eq } from "drizzle-orm";
 
 export const authenticate = async (req, res, next) => {
+    console.log('🔒 Authenticate middleware hit for:', req.method, req.originalUrl);
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {

@@ -4,6 +4,7 @@ import { BookingOptions } from "./Modals/BookingOptions.jsx";
 import { BookingSuccess } from "./BookingSuccess.jsx";
 import { months } from "../assets/Utils/months.js";
 import { socket } from "../services/socket.js";
+import { useService } from "../context/useService.js";
 import { useBooking } from "../context/useBooking.js";
 import '../assets/css/Calendar.css'
 
@@ -40,7 +41,6 @@ const getDayClasses = (bookedServiceList, isToday, isPast, isBlocked, hasConflic
     }
     if (bookedServiceList.length > 0) {
         const isFullyBooked = bookedServiceList.length === ALL_SERVICES.length;
-        // ✅ PAST DATES WITH BOOKINGS - opacity-50
         if (isPast) {
             return `${base} day-cell-booked opacity-50 cursor-default`;
         }
@@ -56,11 +56,18 @@ const getDayClasses = (bookedServiceList, isToday, isPast, isBlocked, hasConflic
     return `${base} day-cell-standard hover:z-10`;
 };
 
-export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = {} }) => {
+export const Calendar = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { bookings, refreshBookings } = useBooking();
+    const maxAllowedDate = new Date(today);
+    maxAllowedDate.setMonth(today.getMonth() + 2);
+    maxAllowedDate.setDate(1);
+    maxAllowedDate.setHours(0, 0, 0, 0);
+    
+    const { serviceConfig = {}, disableServices = [], blackoutDates = []} = useService();
+    console.log('📋 blackoutDates from context:', blackoutDates);
+    const { bookings } = useBooking();
     const { currentUser, setShowSignIn } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
@@ -99,14 +106,12 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
                 delete newConflicts[key];
                 return newConflicts;
             });
-            refreshBookings();
         };
 
         const onBookingCreated = ({ date, service }) => {
             console.log(`📅 New permanent booking: ${service} on ${date}`);
             const key = `${date}-${service}`;
             setActiveConflicts(prev => ({ ...prev, [key]: true }));
-            refreshBookings();
         };
 
         const onBookingConflict = ({ message }) => {
@@ -126,7 +131,7 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
             socket.off('booking-created', onBookingCreated);
             socket.off('booking-conflict', onBookingConflict);
         };
-    }, [refreshBookings]);
+    }, []); 
 
     const bookedDateMap = useMemo(() => {
         const map = new Map();
@@ -138,32 +143,32 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
         return map;
     }, [bookings]);
 
-    // ✅ LIMIT: 3 months lang ang previous
-    const minAllowedDate = new Date(today);
-    minAllowedDate.setMonth(today.getMonth() - 3);
-    minAllowedDate.setHours(0, 0, 0, 0);
-
     const prevMonth = () => {
         const prev = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-        // ✅ Check kung within 3 months limit
-        const prevMonthStart = new Date(prev.getFullYear(), prev.getMonth(), 1);
-        if (prevMonthStart >= minAllowedDate) {
-            setCurrentDate(prev);
-        }
+        setCurrentDate(prev);
     };
 
     const nextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+        const next = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+        const nextMonthStart = new Date(next.getFullYear(), next.getMonth(), 1);
+
+        if (nextMonthStart.getTime() <= maxAllowedDate.getTime()) {
+            setCurrentDate(next);
+        }
     };
 
-    // ✅ Check kung naka-disable ang prev button
     const isPrevDisabled = () => {
-        const prevMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-        return prevMonthStart < minAllowedDate;
+        const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const currentMonthStartView = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return currentMonthStartView.getTime() <= currentMonthStart.getTime();
+    };
+
+    const isNextDisabled = () => {
+        const nextMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+        return nextMonthStart.getTime() > maxAllowedDate.getTime();
     };
 
     const handleDayClick = (dayNumber, isPast, isFullyBooked, bookedServices = [], isBlocked, dateString) => {
-        // ✅ Hindi na pwedeng mag-click sa past dates (kahit may booking)
         if (isPast || isFullyBooked || isBlocked) return;
         if (!currentUser) {
             setShowSignIn(true);
@@ -171,7 +176,7 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
         }
 
         const bookedSet = bookedServices || new Set();
-        
+
         const availableServices = ALL_SERVICES.filter(svc => {
             const isBooked = bookedSet.has(svc);
             const hasConflict = activeConflicts[`${dateString}-${svc}`];
@@ -205,13 +210,13 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
         setShowModal(false);
         setLastBook(details);
         setShowReceipt(true);
-        
+
         const { service, year, month, date } = details;
         const dateString = `${year}-${String(months.indexOf(month) + 1).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
-        
-        socket.emit('booking-confirmed', { 
-            date: dateString, 
-            service, 
+
+        socket.emit('booking-confirmed', {
+            date: dateString,
+            service,
             userId: currentUser?.user_id || currentUser?.id || currentUser?.username
         });
     };
@@ -283,7 +288,6 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
                             🚫
                         </span>
                     )}
-                    {/* ✅ Indicator kung may booking pero past date */}
                     {isPast && bookedServiceList.length > 0 && (
                         <span className="absolute -top-0.5 -left-0.5 text-[8px] opacity-70">
                             📅
@@ -295,13 +299,13 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
         return cells;
     };
 
-    // ✅ Check kung naka-disable ang prev button
     const prevDisabled = isPrevDisabled();
+    const nextDisabled = isNextDisabled();
 
     return (
         <>
             <h3 className="text-center pt-2 font-bold text-xl text-text-primary">Select Your Date</h3>
-            
+
             <div className="flex justify-center gap-3 flex-wrap py-2">
                 {ALL_SERVICES.map((svc) => {
                     const isDisabled = disableServices.includes(svc);
@@ -327,7 +331,7 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
                             onClick={prevMonth}
                             disabled={prevDisabled}
                             className="bg-bg-secondary text-text-primary border border-border px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-lime-500 hover:text-black hover:border-lime-400 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={prevDisabled ? "Cannot go back more than 3 months" : "Previous month"}
+                            title={prevDisabled ? "You are at current month" : "Previous month"}
                         >
                             &lt;
                         </button>
@@ -339,7 +343,9 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
                         </h2>
                         <button
                             onClick={nextMonth}
-                            className="bg-bg-secondary text-text-primary border border-border px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-lime-500 hover:text-black hover:border-lime-400"
+                            disabled={nextDisabled}
+                            className="bg-bg-secondary text-text-primary border border-border px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-base font-bold transition-all duration-200 hover:bg-lime-500 hover:text-black hover:border-lime-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={nextDisabled ? "Cannot go beyond 3 months" : "Next month"}
                         >
                             &gt;
                         </button>
@@ -357,9 +363,8 @@ export const Calendar = ({ disableServices, blackoutDates = [], serviceConfig = 
                         {renderDays()}
                     </div>
 
-                    {/* ✅ Info text about 3-month limit */}
                     <div className="text-center text-[10px] text-text-muted mt-2 border-t border-border pt-2">
-                        📅 Can view up to 3 months back
+                        📅 Can view from current month up to 3 months ahead
                     </div>
                 </div>
             </div>

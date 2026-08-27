@@ -1,4 +1,5 @@
-import { pgTable, serial, text, integer, varchar, jsonb, timestamp, boolean, decimal, date, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, varchar, jsonb, timestamp, boolean, decimal, date, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
     user_id: serial("user_id").primaryKey(),
@@ -64,6 +65,9 @@ export const bookings = pgTable("bookings", {
     dateIdx: index("idx_bookings_booking_date").on(table.booking_date),
     statusIdx: index("idx_bookings_status").on(table.status),
     serviceIdx: index("idx_bookings_service").on(table.service),
+    activeBookingUnique: uniqueIndex("idx_bookings_active_unique")
+        .on(table.booking_date, table.service)
+        .where(sql`${table.status} != 'Cancelled'`),
 }));
 
 export const feedbacks = pgTable("feedbacks", {
@@ -80,4 +84,11 @@ export const feedbacks = pgTable("feedbacks", {
     bookingIdx: index("idx_feedbacks_booking_id").on(table.booking_id),
     userIdx: index("idx_feedbacks_user_id").on(table.user_id),
     ratingIdx: index("idx_feedbacks_rating").on(table.rating),
+    bookingUnique: uniqueIndex("idx_feedbacks_booking_unique").on(table.booking_id),
 }));
+
+export const blackoutDates = pgTable("blackout_dates", {
+    blackout_id: serial("blackout_id").primaryKey(),
+    date: date("date").notNull().unique(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});

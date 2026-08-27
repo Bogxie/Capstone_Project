@@ -1,6 +1,6 @@
+import { eq, desc, and, ne } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { users } from "../models/schema.js";
-import { eq, desc } from "drizzle-orm";
 import { hashPassword } from "../utils/auth.js";
 
 export const getAllUsers = async (req, res) => {
@@ -27,9 +27,9 @@ export const getAllUsers = async (req, res) => {
         res.status(200).json(formattedUsers);
     } catch (err) {
         console.error('Error fetching users:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to fetch users' 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch users'
         });
     }
 };
@@ -52,9 +52,9 @@ export const getUserById = async (req, res) => {
             .where(eq(users.user_id, parseInt(id)));
 
         if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
             });
         }
 
@@ -64,9 +64,9 @@ export const getUserById = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching user:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to fetch user' 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch user'
         });
     }
 };
@@ -76,9 +76,9 @@ export const createUser = async (req, res) => {
         const { username, email, password, role, status } = req.body;
 
         if (!username || !email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Username, email, and password are required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Username, email, and password are required'
             });
         }
 
@@ -88,9 +88,9 @@ export const createUser = async (req, res) => {
             .where(eq(users.email, email));
 
         if (existingEmail.length > 0) {
-            return res.status(409).json({ 
-                success: false, 
-                error: 'Email already exists' 
+            return res.status(409).json({
+                success: false,
+                error: 'Email already exists'
             });
         }
 
@@ -100,9 +100,9 @@ export const createUser = async (req, res) => {
             .where(eq(users.username, username));
 
         if (existingUsername.length > 0) {
-            return res.status(409).json({ 
-                success: false, 
-                error: 'Username already exists' 
+            return res.status(409).json({
+                success: false,
+                error: 'Username already exists'
             });
         }
 
@@ -133,9 +133,9 @@ export const createUser = async (req, res) => {
         });
     } catch (err) {
         console.error('Error creating user:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to create user' 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create user'
         });
     }
 };
@@ -150,9 +150,9 @@ export const updateUser = async (req, res) => {
             .where(eq(users.user_id, parseInt(id)));
 
         if (existingUser.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
             });
         }
 
@@ -160,13 +160,15 @@ export const updateUser = async (req, res) => {
             const emailTaken = await db
                 .select()
                 .from(users)
-                .where(eq(users.email, email))
-                .where(eq(users.user_id, parseInt(id)));
+                .where(and(
+                    eq(users.email, email),
+                    ne(users.user_id, parseInt(id))
+                ));
 
             if (emailTaken.length > 0) {
-                return res.status(409).json({ 
-                    success: false, 
-                    error: 'Email already taken' 
+                return res.status(409).json({
+                    success: false,
+                    error: 'Email already taken'
                 });
             }
         }
@@ -198,13 +200,12 @@ export const updateUser = async (req, res) => {
         });
     } catch (err) {
         console.error('Error updating user:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to update user' 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update user'
         });
     }
 };
-
 
 export const deleteUser = async (req, res) => {
     try {
@@ -215,9 +216,9 @@ export const deleteUser = async (req, res) => {
             .where(eq(users.user_id, parseInt(id)));
 
         if (existingUser.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
             });
         }
 
@@ -231,9 +232,9 @@ export const deleteUser = async (req, res) => {
         });
     } catch (err) {
         console.error('Error deleting user:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to delete user' 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete user'
         });
     }
 };  

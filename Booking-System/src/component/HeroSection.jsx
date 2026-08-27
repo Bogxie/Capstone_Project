@@ -1,35 +1,67 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/useAuth.js'
+import { useService } from '../context/useService.js'
 import { DeliveryTable } from './DeliveryTable.jsx'
+import { PackagesModal } from './modals/PackagesModal.jsx'
 import { themeColors } from '../assets/utils/themeColors.js'
 import { service } from '../assets/utils/services.js'
-import ProjectorImg from '../assets/Images/hero-projector-BLlExwy9.jpg'
+import GoldenHourImg from '../assets/Images/Ai.jpg'
+import GoldenHourImg2 from '../assets/images/Ai2.png'
+import SnoopDoughImg from '../assets/images/Ai3.jpg'
+import SnoopDoughImg2 from '../assets/images/Ai4.jpg'
+import ProjectorImg from '../assets/images/Ai5.jpg'
+import ProjectorImg2 from '../assets/images/Ai6.jpg'
 import '../assets/css/HeroSection.css'
 
 const whyChoose = [
     {
         id: 0,
-        image: ProjectorImg,
-        title: "Premium Quality",
-        text: "Some quick example text to build on the card title and make up the bulk of the card's content for reason 1."
+        image: GoldenHourImg,
+        title: "Golden Hour",
+        subtitle: "Video & Photography",
+        text: "Capture your most important moments with professional video and photography services, specially made for weddings, prenup shoots, and special events."
     },
     {
         id: 1,
-        image: ProjectorImg,
-        title: "Affordable Rates",
-        text: "Some quick example text to build on the card title and make up the bulk of the card's content for reason 2."
+        image: GoldenHourImg2,
+        title: "Wedding Memories That Last",
+        subtitle: "Golden Hour",
+        text: "From the ceremony to the reception, Golden Hour helps preserve the emotions, details, and unforgettable moments of your special day."
     },
     {
         id: 2,
+        image: SnoopDoughImg,
+        title: "Snoop Dough",
+        subtitle: "Pandesal Catering",
+        text: "Make your event extra special with freshly prepared pandesal catering, perfect for weddings, birthdays, gatherings, and other special occasions."
+    },
+    {
+        id: 3,
+        image: SnoopDoughImg2,
+        title: "Freshly Baked for Your Event",
+        subtitle: "Snoop Dough",
+        text: "Give your guests something delicious to enjoy with freshly baked pandesal prepared to complement your event and make every gathering memorable."
+    },
+    {
+        id: 4,
         image: ProjectorImg,
-        title: "Excellent Service",
-        text: "Some quick example text to build on the card title and make up the bulk of the card's content for reason 3."
+        title: "Projector Rental",
+        subtitle: "For Every Event",
+        text: "Bring your presentations, wedding videos, photo slideshows, meetings, and special events to life with our reliable projector rental service."
+    },
+    {
+        id: 5,
+        image: ProjectorImg2,
+        title: "Complete Event Experience",
+        subtitle: "E-vent Flow",
+        text: "From capturing memories and serving delicious food to providing essential event equipment, E-vent Flow brings practical event services together in one place."
     },
 ]
 
-export const HeroSection = ({
-    serviceConfig,
-    municipalities = []
-}) => {
+export const HeroSection = () => {
+
+    const { currentUser, setShowSignIn } = useAuth();
+    const { serviceConfig, municipalities } = useService();
     const [selectedService, setSelectedService] = useState(null)
     const [currentSlide, setCurrentSlide] = useState(0)
 
@@ -49,8 +81,10 @@ export const HeroSection = ({
     }, [currentSlide])
 
     const handlePackage = (svc) => {
-        console.log('📦 View Packages clicked:', svc.brand);
-        console.log('📦 Packages data:', serviceConfig?.[svc.brand]?.packages);
+        if (!currentUser) {
+            setShowSignIn(true);
+            return;
+        }
         setSelectedService(svc)
     }
 
@@ -157,10 +191,10 @@ export const HeroSection = ({
                 </div>
             </div>
 
-            {/* Why Choose Section */}
-            <div className="max-w-6xl mx-auto px-4 py-4">
+            {/* ✅ Why Choose Section - MAS MALIIT ANG LAPAD */}
+            <div className="max-w-4xl mx-auto px-4 py-4">
                 <h3 className="text-2xl font-bold text-center mb-6 text-text-primary">
-                    Why choose E-vent <span className="text-lime-400">Flow</span>
+                    Why choose E-vent <span className="text-[#b6ff2e]">Flow</span>
                 </h3>
                 <div className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-xl bg-black">
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
@@ -190,7 +224,7 @@ export const HeroSection = ({
                                 >
                                     <img
                                         src={item.image}
-                                        className="w-full h-full object-cover brightness-[45%]"
+                                        className="w-full h-full object-contain brightness-[45%]"
                                         alt={item.title}
                                     />
                                     <div className="absolute inset-x-0 bottom-12 max-w-xl mx-auto text-center px-6 py-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10">
@@ -221,120 +255,17 @@ export const HeroSection = ({
                 </div>
             </div>
 
-            {/* Delivery Table - Use municipalities from props */}
+            {/* Delivery Table */}
             <DeliveryTable municipalities={municipalities} />
 
-            {/* ✅ FIXED MODAL - With proper light/dark text */}
+            {/* Package Modal */}
             {selectedService && (
-                <div 
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                    style={{ 
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        backdropFilter: 'blur(8px)',
-                        zIndex: 9999,
-                    }}
-                    onClick={closeModal}
-                >
-                    <div 
-                        className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-                        style={{
-                            backgroundColor: 'var(--bg-modal, #ffffff)',
-                            color: 'var(--text-primary, #0f172a)',
-                            border: '1px solid var(--border, #e2e8f0)',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-5 border-b shrink-0"
-                            style={{
-                                borderColor: 'var(--border, #e2e8f0)',
-                            }}
-                        >
-                            <h5 className="text-lg font-bold text-lime-500 dark:text-lime-400">
-                                {selectedService.brand} Packages
-                            </h5>
-                            <button
-                                type="button"
-                                className="p-1 rounded-lg hover:bg-bg-hover transition-colors"
-                                style={{
-                                    color: 'var(--text-muted, #94a3b8)',
-                                }}
-                                onClick={closeModal}
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal Body - Packages List */}
-                        <div className="p-6 overflow-y-auto flex-1">
-                            {serviceConfig?.[selectedService.brand]?.packages?.length > 0 ? (
-                                <div className="space-y-4">
-                                    {serviceConfig[selectedService.brand].packages.map((pkg, i) => {
-                                        const serviceColor = themeColors[selectedService.brand]?.tailwind?.badge || 'bg-lime-500 text-black'
-                                        return (
-                                            <div key={i} className="border-b pb-4 last:border-0 last:pb-0"
-                                                style={{
-                                                    borderColor: 'var(--border, #e2e8f0)',
-                                                }}
-                                            >
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <strong className="font-semibold text-sm"
-                                                        style={{
-                                                            color: 'var(--text-primary, #0f172a)',
-                                                        }}
-                                                    >
-                                                        {pkg.name || 'Unnamed Package'}
-                                                    </strong>
-                                                    <span className={`px-3 py-1 text-xs font-bold rounded-full shrink-0 ${serviceColor}`}>
-                                                        {pkg.price || '₱0'}
-                                                    </span>
-                                                </div>
-                                                {pkg.details && (
-                                                    <p className="text-xs mt-1.5 leading-relaxed"
-                                                        style={{
-                                                            color: 'var(--text-secondary, #475569)',
-                                                        }}
-                                                    >
-                                                        {pkg.details}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8"
-                                    style={{
-                                        color: 'var(--text-muted, #94a3b8)',
-                                    }}
-                                >
-                                    <p className="text-sm">No packages available for this service.</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="p-4 border-t shrink-0"
-                            style={{
-                                borderColor: 'var(--border, #e2e8f0)',
-                            }}
-                        >
-                            <button
-                                className="w-full px-4 py-2.5 bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg transition-colors text-sm"
-                                onClick={closeModal}
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <PackagesModal
+                    closeModal={closeModal}
+                    selectedService={selectedService}
+                    serviceConfig={serviceConfig}
+                    themeColors={themeColors}
+                />
             )}
         </>
     )

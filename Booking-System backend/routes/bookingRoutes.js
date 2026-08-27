@@ -4,7 +4,7 @@ import { getAllBookings, createBooking, updateBookingStatus, updateBooking} from
 
 export const router = express.Router()
 
-router.get('/bookings', getAllBookings);
+router.get('/bookings', authenticate, getAllBookings);
 router.post('/bookings', authenticate, createBooking );
 router.put('/bookings/:id/status', authenticate, updateBookingStatus);
 router.put('/bookings/:id/', authenticate, updateBooking);

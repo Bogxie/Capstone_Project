@@ -1,279 +1,191 @@
 // context/FeedbackProvider.jsx
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { FeedbackContext } from "./FeedbackContext";
 import { RatingSuccessModal } from "../component/modals/RatingSuccessModal";
-import { useBooking } from "./useBooking";
-import axios from "axios";
+import { API_URL } from './API_URL';
+import axios from 'axios';
+
+const apiCall = async (method, url, data = null) => {
+  const token = localStorage.getItem('token');
+  const headers = {};
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const config = {
+    method,
+    url: `${API_URL}${url}`,
+    headers,
+    data,
+  };
+
+  const response = await axios(config);
+  return response.data;
+};
+
+// ✅ Feedback API functions
+const feedbackApi = {
+  getAll: () => apiCall('get', '/feedback'),
+  create: (data) => apiCall('post', '/feedback', data),
+  update: (id, data) => apiCall('put', `/feedback/${id}`, data),
+  delete: (id) => apiCall('delete', `/feedback/${id}`),
+  getByBooking: (bookingId) => apiCall('get', `/feedback/booking/${bookingId}`),
+};
+
+const feedbackKeys = {
+  all: ['feedbacks'],
+  byBooking: (bookingId) => ['feedbacks', 'booking', bookingId],
+};
 
 export const FeedbackProvider = ({ children }) => {
-    const { bookings } = useBooking();
-    const [feedbacks, setFeedbacks] = useState([]);
-    const [showSuccess, setShowSuccess] = useState(false);
-    const [successBookingId, setSuccessBookingId] = useState(null);
-    const [isEditable, setIsEditable] = useState(false);
-    const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successBookingId, setSuccessBookingId] = useState(null);
+  const [isEditable, setIsEditable] = useState(false);
 
-    // Fetch feedbacks
-    useEffect(() => {
-        const fetchFeedbacks = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:3001/api/feedback', {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
 
-                if (response.data.success) {
-                    const processedFeedbacks = response.data.data.map(f => ({
-                        ...f,
-                        imageUrls: f.image_url || f.imageUrls || [],
-                        image_url: f.image_url || f.imageUrls || [],
-                        bookID: f.bookID || `BK-${String(f.booking_id || f.bookingId || f.bookingID).padStart(6, '0')}`,
-                        username: f.username || 'User',
-                        isAnonymous: f.is_anonymous || f.isAnonymous || false,
-                        is_anonymous: f.is_anonymous || f.isAnonymous || false,
-                        rating: parseInt(f.rating) || 0,
-                        comment: f.comment || '',
-                        booking_id: f.booking_id || f.bookingId || f.bookingID,
-                        user_id: f.user_id || f.userId || f.userID,
-                        feedback_id: f.feedback_id || f.feedbackId,
-                        service: f.service || null,
-                    }));
-                    
-                    setFeedbacks(processedFeedbacks);
-                    console.log('📦 Feedbacks loaded:', processedFeedbacks.length);
-                }
-            } catch (err) {
-                console.error('Error fetching feedbacks:', err);
-                setFeedbacks([]);
-            } finally {
-                setLoading(false);
+  const { data: feedbacks = [], isLoading: loading } = useQuery({
+    queryKey: feedbackKeys.all,
+    queryFn: async () => {
+      const response = await feedbackApi.getAll();
+      return response.data || [];
+    },
+    staleTime: 60 * 1000,
+  });
+
+
+  const saveFeedbackMutation = useMutation({
+    mutationFn: async (feedbackData) => {
+      let imageUrls = feedbackData.existingImages || [];
+
+      // Upload new images
+      if (feedbackData.newImages && feedbackData.newImages.length > 0) {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        feedbackData.newImages.forEach(file => formData.append('images', file));
+
+        const uploadResponse = await axios.post(
+          `${API_URL}/upload/multiple`,
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
             }
-        };
+          }
+        );
 
-        fetchFeedbacks();
-    }, []);
-
-    // Get feedback by booking ID
-    const getFeedbackByBooking = async (bookingId) => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(
-                `http://localhost:3001/api/feedback/booking/${bookingId}`,
-                {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                }
-            );
-
-            if (response.data.success) {
-                const feedback = response.data.data;
-                return {
-                    ...feedback,
-                    bookID: feedback.bookID || `BK-${String(feedback.booking_id || feedback.bookingId || feedback.bookingID).padStart(6, '0')}`,
-                    imageUrls: feedback.image_url || feedback.imageUrls || [],
-                    username: feedback.username || 'User',
-                    isAnonymous: feedback.is_anonymous || feedback.isAnonymous || false,
-                    rating: parseInt(feedback.rating) || 0,
-                    comment: feedback.comment || '',
-                    feedback_id: feedback.feedback_id || feedback.feedbackId,
-                };
-            }
-            return null;
-        } catch (err) {
-            console.error('Error fetching feedback by booking:', err);
-            return null;
+        if (uploadResponse.data.success) {
+          imageUrls = [...imageUrls, ...uploadResponse.data.urls];
         }
-    };
+      }
 
-    const saveFeedback = async (feedbackData) => {
-        try {
-            const token = localStorage.getItem('token');
-            let imageUrls = feedbackData.existingImages || [];
+      const payload = {
+        bookingId: feedbackData.bookingId || feedbackData.bookID,
+        userId: feedbackData.userId || null,
+        rating: feedbackData.rating,
+        comment: feedbackData.comment,
+        isAnonymous: feedbackData.isAnonymous || false,
+        imageUrls: imageUrls,
+      };
 
-            // Upload new images
-            if (feedbackData.newImages && feedbackData.newImages.length > 0) {
-                const formData = new FormData();
-                feedbackData.newImages.forEach(file => formData.append('images', file));
+      const response = feedbackData.feedback_id
+        ? await feedbackApi.update(feedbackData.feedback_id, payload)
+        : await feedbackApi.create(payload);
 
-                const uploadResponse = await axios.post(
-                    'http://localhost:3001/api/upload/multiple',
-                    formData,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    }
-                );
+      return response.data; 
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: feedbackKeys.all });
+      if (variables.bookingId) {
+        queryClient.invalidateQueries({ queryKey: feedbackKeys.byBooking(variables.bookingId) });
+      }
 
-                if (uploadResponse.data.success) {
-                    imageUrls = [...imageUrls, ...uploadResponse.data.urls];
-                }
-            }
+      setIsEditable(!!variables.feedback_id);
+      setSuccessBookingId(data.booking_id || data.bookID);
+      setShowSuccess(true);
+    },
+    onError: (error) => {
+      console.error('Error saving feedback:', error);
+      alert('Failed to save feedback. Please try again.');
+    },
+  });
 
-            const booking = bookings.find(b => 
-                b.booking_id === feedbackData.bookingId || 
-                b.bookID === feedbackData.bookID
-            );
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: (id) => feedbackApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: feedbackKeys.all });
+    },
+    onError: (error) => {
+      console.error('Error deleting feedback:', error);
+      alert('Failed to delete feedback. Please try again.');
+    },
+  });
 
-            const payload = {
-                bookingId: feedbackData.bookingId || feedbackData.bookID,
-                userId: feedbackData.userId || null,
-                rating: feedbackData.rating,
-                comment: feedbackData.comment,
-                isAnonymous: feedbackData.isAnonymous || false,
-                imageUrls: imageUrls,
-            };
+  const saveFeedback = async (feedbackData) => {
+    return saveFeedbackMutation.mutateAsync(feedbackData);
+  };
 
-            let response;
-            if (feedbackData.feedback_id) {
-                response = await axios.put(
-                    `http://localhost:3001/api/feedback/${feedbackData.feedback_id}`,
-                    payload,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    'http://localhost:3001/api/feedback',
-                    payload,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-            }
-
-            if (response.data.success) {
-                const newFeedback = {
-                    ...response.data.data,
-                    imageUrls: imageUrls,
-                    image_url: imageUrls,
-                    service: booking?.service,
-                    bookID: booking?.bookID || `BK-${String(booking?.booking_id || feedbackData.bookingId).padStart(6, '0')}`,
-                    username: response.data.data.username || 'User',
-                    isAnonymous: feedbackData.isAnonymous || false,
-                    is_anonymous: feedbackData.isAnonymous || false,
-                    rating: parseInt(feedbackData.rating) || 0,
-                };
-
-                setFeedbacks(prev => {
-                    const exists = prev.find(f => 
-                        f.booking_id === newFeedback.booking_id || 
-                        f.bookID === newFeedback.bookID
-                    );
-
-                    setIsEditable(!!exists);
-                    setSuccessBookingId(newFeedback.booking_id || newFeedback.bookID);
-                    setShowSuccess(true);
-
-                    if (exists) {
-                        return prev.map(f =>
-                            f.booking_id === newFeedback.booking_id || 
-                            f.bookID === newFeedback.bookID
-                                ? { ...f, ...newFeedback }
-                                : f
-                        );
-                    }
-                    return [...prev, newFeedback];
-                });
-
-                await refreshFeedbacks();
-                return response.data;
-            }
-        } catch (err) {
-            console.error('Error saving feedback:', err);
-            alert('Failed to save feedback. Please try again.');
-            throw err;
-        }
-    };
-
-    const deleteFeedback = async (bookingId) => {
-        try {
-            const token = localStorage.getItem('token');
-            const feedback = feedbacks.find(f =>
-                f.booking_id === bookingId || f.bookID === bookingId
-            );
-
-            if (!feedback) return;
-
-            const response = await axios.delete(
-                `http://localhost:3001/api/feedback/${feedback.feedback_id}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
-
-            if (response.data.success) {
-                setFeedbacks(prev => prev.filter(f =>
-                    f.booking_id !== bookingId && f.bookID !== bookingId
-                ));
-            }
-        } catch (err) {
-            console.error('Error deleting feedback:', err);
-            alert('Failed to delete feedback. Please try again.');
-        }
-    };
-
-    const refreshFeedbacks = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:3001/api/feedback', {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-
-            if (response.data.success) {
-                const processedFeedbacks = response.data.data.map(f => ({
-                    ...f,
-                    imageUrls: f.image_url || f.imageUrls || [],
-                    image_url: f.image_url || f.imageUrls || [],
-                    bookID: f.bookID || `BK-${String(f.booking_id || f.bookingId || f.bookingID).padStart(6, '0')}`,
-                    username: f.username || 'User',
-                    isAnonymous: f.is_anonymous || f.isAnonymous || false,
-                    is_anonymous: f.is_anonymous || f.isAnonymous || false,
-                    rating: parseInt(f.rating) || 0,
-                    comment: f.comment || '',
-                    booking_id: f.booking_id || f.bookingId || f.bookingID,
-                    user_id: f.user_id || f.userId || f.userID,
-                    feedback_id: f.feedback_id || f.feedbackId,
-                    service: f.service || null,
-                }));
-                setFeedbacks(processedFeedbacks);
-                console.log('📦 Feedbacks refreshed:', processedFeedbacks.length);
-            }
-        } catch (err) {
-            console.error('Error refreshing feedbacks:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <FeedbackContext.Provider value={{
-            feedbacks,
-            loading,
-            saveFeedback,
-            deleteFeedback,
-            refreshFeedbacks,
-            getFeedbackByBooking
-        }}>
-            {showSuccess && (
-                <RatingSuccessModal
-                    isEditable={isEditable}
-                    bookID={successBookingId}
-                    onClose={() => {
-                        setShowSuccess(false);
-                        setSuccessBookingId(null);
-                    }}
-                />
-            )}
-            {children}
-        </FeedbackContext.Provider>
+  const deleteFeedback = async (bookingId) => {
+    const feedback = feedbacks.find(f =>
+      f.booking_id === bookingId || f.bookID === bookingId
     );
+
+    if (!feedback) return;
+    return deleteFeedbackMutation.mutateAsync(feedback.feedback_id);
+  };
+
+  const refreshFeedbacks = () => {
+    queryClient.invalidateQueries({ queryKey: feedbackKeys.all });
+  };
+
+  const getFeedbackByBooking = async (bookingId) => {
+    try {
+      const response = await feedbackApi.getByBooking(bookingId);
+      if (response.success) {
+        const feedback = response.data;
+        return {
+          ...feedback,
+          bookID: feedback.bookID || `BK-${String(feedback.booking_id || feedback.bookingId || feedback.bookingID).padStart(6, '0')}`,
+          imageUrls: feedback.image_url || feedback.imageUrls || [],
+          username: feedback.username || 'User',
+          isAnonymous: feedback.is_anonymous || feedback.isAnonymous || false,
+          rating: parseInt(feedback.rating) || 0,
+          comment: feedback.comment || '',
+          feedback_id: feedback.feedback_id || feedback.feedbackId,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching feedback by booking:', err);
+      return null;
+    }
+  };
+
+  const value = {
+    feedbacks,
+    loading,
+    saveFeedback,
+    deleteFeedback,
+    refreshFeedbacks,
+    getFeedbackByBooking
+  };
+
+  return (
+    <FeedbackContext.Provider value={value}>
+      {showSuccess && (
+        <RatingSuccessModal
+          isEditable={isEditable}
+          bookID={successBookingId}
+          onClose={() => {
+            setShowSuccess(false);
+            setSuccessBookingId(null);
+          }}
+        />
+      )}
+      {children}
+    </FeedbackContext.Provider>
+  );
 };

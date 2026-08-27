@@ -161,10 +161,10 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
     };
 
     return (
-        <div className={`fixed bottom-20 right-4 h-96 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex z-[200] overflow-hidden text-white transition-all duration-300 ${isAdmin ? "w-96" : "w-72"}`}>
+        <div className={`fixed bottom-20 right-4 h-96 bg-[#23262f] border border-[#3a3d48] rounded-xl shadow-2xl flex z-[200] overflow-hidden text-white transition-all duration-300 ${isAdmin ? "w-96" : "w-72"}`}>
             {isAdmin && (
-                <div className="w-28 bg-zinc-950 border-r border-zinc-700 hide-scrollbar overflow-y-auto flex-shrink-0">
-                    <p className="text-[10px] text-lime-400 p-1.5 font-bold text-center border-b border-zinc-700">ONLINE</p>
+                <div className="w-28 bg-[#1a1c24] border-r border-[#3a3d48] hide-scrollbar overflow-y-auto flex-shrink-0">
+                    <p className="text-[10px] text-[#b6ff2e] p-1.5 font-bold text-center border-b border-[#3a3d48]">ONLINE</p>
                     {sortedUserList.length === 0 ? (
                         <p className="text-zinc-500 text-[11px] text-center p-2">No users</p>
                     ) : (
@@ -174,8 +174,8 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                                 onClick={() => handleSelectUser(user)}
                                 className={`relative w-full px-2 py-2.5 text-[11px] truncate transition-colors text-center ${
                                     selectedUser === user
-                                        ? "bg-lime-500 text-black font-bold"
-                                        : "text-lime-400 hover:bg-zinc-800"
+                                        ? "bg-[#b6ff2e] text-[#23262f] font-bold"
+                                        : "text-[#b6ff2e] hover:bg-[#2d303a]"
                                 }`}
                             >
                                 👤 {user}
@@ -188,8 +188,8 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                 </div>
             )}
 
-            <div className="flex-1 flex flex-col bg-zinc-900">
-                <div className="bg-zinc-800 text-lime-400 text-sm font-bold px-3 py-2 border-b border-zinc-700 flex justify-between items-center">
+            <div className="flex-1 flex flex-col bg-[#23262f]">
+                <div className="bg-[#2d303a] text-[#b6ff2e] text-sm font-bold px-3 py-2 border-b border-[#3a3d48] flex justify-between items-center">
                     <span>
                         {isAdmin
                             ? selectedUser
@@ -230,8 +230,8 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                                     <div
                                         className={`px-3 py-2 rounded-lg text-xs break-words ${
                                             isMyMessage
-                                                ? "bg-lime-500 text-black rounded-tr-none"
-                                                : "bg-zinc-800 text-white rounded-tl-none"
+                                                ? "bg-[#b6ff2e] text-[#23262f] rounded-tr-none"
+                                                : "bg-[#2d303a] text-white rounded-tl-none"
                                         }`}
                                     >
                                         {msg.message}
@@ -246,19 +246,19 @@ export const Chat = ({ socket, isVisible, setIsVisible }) => {
                     <div ref={bottomRef} />
                 </div>
 
-                <form onSubmit={handleSend} className="flex gap-2 p-2 border-t border-zinc-700 bg-zinc-900">
+                <form onSubmit={handleSend} className="flex gap-2 p-2 border-t border-[#3a3d48] bg-[#23262f]">
                     <input
                         type="text"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type message..."
                         disabled={needsUserSelection}
-                        className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-lime-500"
+                        className="flex-1 min-w-0 bg-[#2d303a] border border-[#3a3d48] rounded-lg px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#b6ff2e]"
                     />
                     <button
                         type="submit"
                         disabled={needsUserSelection}
-                        className="px-3 py-1.5 bg-lime-500 hover:bg-lime-400 text-black text-xs font-bold rounded-lg disabled:opacity-50 transition-colors shrink-0"
+                        className="px-3 py-1.5 bg-[#b6ff2e] hover:bg-[#a3e829] text-[#23262f] text-xs font-bold rounded-lg disabled:opacity-50 transition-colors shrink-0"
                     >
                         ➤
                     </button>

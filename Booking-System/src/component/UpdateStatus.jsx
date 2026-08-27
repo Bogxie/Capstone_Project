@@ -4,7 +4,7 @@ export const UpdateStatus = ({
     handleComplete,
     handleRevert,
 }) => {
-    // ✅ Pending → Confirm only
+    
     if (status === 'Pending') {
         return (
             <button
@@ -16,7 +16,7 @@ export const UpdateStatus = ({
         );
     }
 
-    // ✅ Confirmed → Complete + Revert
+    // ✅ Confirmed → Complete + Revert (to Pending)
     if (status === 'Confirmed') {
         return (
             <div className="flex gap-1 w-full">
@@ -36,8 +36,18 @@ export const UpdateStatus = ({
         );
     }
 
-    // ✅ Completed or Cancelled → Revert only
-    if (status === 'Completed' || status === 'Cancelled') {
+    if (status === 'Completed') {
+        return (
+            <button
+                onClick={handleRevert}
+                className="w-full rounded-md border border-gray-500 text-gray-500 px-3 py-1.5 text-[10px] transition hover:bg-gray-500 hover:text-white"
+            >
+                Revert
+            </button>
+        );
+    }
+
+    if (status === 'Cancelled') {
         return (
             <button
                 onClick={handleRevert}

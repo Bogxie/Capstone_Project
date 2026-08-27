@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 :root {
+    --lime-500: #b6ff2e;
+    --lime-400: #c9ff5e;
+    --lime-600: #a3e829;
+    --lime-700: #8fd122;
+    
     --bg-primary: #ffffff;
     --bg-secondary: #f8fafc;
     --bg-card: #ffffff;
@@ -19,31 +24,44 @@
     
     --shadow: 0 1px 3px rgba(0,0,0,0.1);
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+    
+    /* ✅ Text stroke for light mode */
+    --text-stroke-width: 1px;
+    --text-stroke-color: #000000;
+    --text-shadow: none;
 }
 
-/* ✅ Dark Theme */
 [data-theme="dark"] {
-    --bg-primary: #18181b;
-    --bg-secondary: #27272a;
-    --bg-card: #18181b;
-    --bg-input: #27272a;
-    --bg-hover: #3f3f46;
-    --bg-modal: #18181b;
-    --bg-header: #27272a;
-    --bg-dropdown: #18181b;
+    /* ✅ NEW DARK BG COLOR */
+    --bg-primary: #23262f;
+    --bg-secondary: #2d303a;
+    --bg-card: #23262f;
+    --bg-input: #2d303a;
+    --bg-hover: #3a3d48;
+    --bg-modal: #23262f;
+    --bg-header: #2d303a;
+    --bg-dropdown: #23262f;
+    
+    --lime-500: #b6ff2e;
+    --lime-400: #c9ff5e;
+    --lime-600: #a3e829;
     
     --text-primary: #fafafa;
     --text-secondary: #a1a1aa;
     --text-muted: #71717a;
     
     --border: #3f3f46;
-    --border-light: #27272a;
+    --border-light: #2d303a;
     
     --shadow: 0 1px 3px rgba(0,0,0,0.3);
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+    
+    /* ✅ No text stroke for dark mode */
+    --text-stroke-width: 0;
+    --text-stroke-color: transparent;
+    --text-shadow: none;
 }
 
-/* ✅ Body - Dynamic theme */
 body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
@@ -51,12 +69,10 @@ body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* ✅ Smooth transitions for theme switching */
 * {
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-/* ✅ Scrollbar styling (optional) */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;

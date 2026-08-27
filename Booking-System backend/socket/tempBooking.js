@@ -24,10 +24,16 @@ export const initBookingSocket = (io) => {
         });
 
         // Check availability
-        socket.on("check-availability", ({ date, service, userId }, callback) => {
+        socket.on("check-availability", ({ date, service }, callback) => {
+            // ✅ kailangan naka-login
+            if (!socket.user) {
+                callback({ available: false, message: "Please log in to book." });
+                return;
+            }
+
             const dateKey = `${date}-${service}`;
-            const userIdStr = String(userId);
-            
+            const userIdStr = String(socket.user.user_id); // ✅ galing sa verified token, hindi sa payload
+
             console.log(`🔍 Checking availability: ${dateKey} for user ${userIdStr}`);
 
             if (!isSlotAvailable(dateKey)) {
@@ -92,9 +98,11 @@ export const initBookingSocket = (io) => {
         });
 
         // Booking confirmed
-        socket.on("booking-confirmed", ({ date, service, userId }) => {
+        socket.on("booking-confirmed", ({ date, service }) => {
+            if (!socket.user) return; // ✅ walang effect kung hindi naka-login
+
             const dateKey = `${date}-${service}`;
-            const userIdStr = String(userId);
+            const userIdStr = String(socket.user.user_id); // ✅ verified
             const booking = getSlotBooking(dateKey);
             
             if (booking && String(booking.userId) === userIdStr) {
@@ -105,9 +113,11 @@ export const initBookingSocket = (io) => {
         });
 
         // Booking cancelled
-        socket.on("booking-cancelled", ({ date, service, userId }) => {
+        socket.on("booking-cancelled", ({ date, service }) => {
+            if (!socket.user) return; // ✅ walang effect kung hindi naka-login
+
             const dateKey = `${date}-${service}`;
-            const userIdStr = String(userId);
+            const userIdStr = String(socket.user.user_id); // ✅ verified
             const booking = getSlotBooking(dateKey);
             
             if (booking && String(booking.userId) === userIdStr) {
@@ -119,6 +129,13 @@ export const initBookingSocket = (io) => {
 
         // Admin force release
         socket.on("admin-release-slot", ({ date, service }) => {
+            // ✅ kailangan Admin role
+            if (!socket.user || socket.user.user_role !== 'Admin') {
+                socket.emit("error", { message: "Unauthorized" });
+                console.log(`🚫 Unauthorized admin-release-slot attempt from ${socket.id}`);
+                return;
+            }
+
             const dateKey = `${date}-${service}`;
             if (!isSlotAvailable(dateKey)) {
                 tempBookings.delete(dateKey);

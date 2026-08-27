@@ -2,16 +2,16 @@ import { useState } from "react";
 import { formatCurrency } from '../../assets/Utils/formatCurrency.js'
 
 const QRCodeDisplay = ({ merchantName }) => (
-    <div className="bg-white p-4 rounded-lg flex flex-col items-center justify-center">
-        <div className="w-36 h-32 bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400">
+    <div className="bg-[#23262f] p-4 rounded-lg flex flex-col items-center justify-center border border-[#3a3d48]">
+        <div className="w-36 h-32 bg-[#2d303a] rounded-lg flex items-center justify-center border-2 border-dashed border-[#3a3d48]">
             <div className="text-center">
                 <span className="text-4xl">📱</span>
-                <p className="text-xs text-gray-500 mt-0.5">QR Code</p>
+                <p className="text-xs text-zinc-500 mt-0.5">QR Code</p>
             </div>
         </div>
         <div className="mt-2 text-center w-full">
-            <p className="text-sm text-gray-600 font-bold">GCash: 09123456789</p>
-            <p className="text-sm text-gray-500">{merchantName}</p>
+            <p className="text-sm text-[#b6ff2e] font-bold">GCash: 09123456789</p>
+            <p className="text-sm text-zinc-400">{merchantName}</p>
         </div>
     </div>
 );
@@ -41,17 +41,17 @@ export const BookingSummaryModal = ({
         }, 3000);
     };
 
-    const tdClass = "border border-[#6184D8] text-white bg-[#1e1e1e] px-2 py-1 text-sm";
-    const thClass = "border border-[#6184D8] text-white bg-[#1e1e1e] px-2 py-1 text-sm font-bold whitespace-nowrap";
+    const tdClass = "border border-[#3a3d48] text-white bg-[#1a1c24] px-2 py-1 text-sm";
+    const thClass = "border border-[#3a3d48] text-white bg-[#23262f] px-2 py-1 text-sm font-bold whitespace-nowrap";
 
     return (
         <>
             {!showQR ? (
                 <div>
-                    <h6 className="text-center mb-2 font-bold text-sm">STEP 2 OF 3 - SECURE DATE</h6>
+                    <h6 className="text-center mb-2 font-bold text-sm text-[#b6ff2e]">STEP 2 OF 3 - SECURE DATE</h6>
 
-                    <div className="bg-[#1e1e1e] rounded-lg p-2 mb-1 border border-gray-600">
-                        <h5 className="text-center my-2 text-[#6184D8] font-semibold text-sm [font-variant:small-caps] border-b border-[#6184D8] pb-1">
+                    <div className="bg-[#1a1c24] rounded-lg p-2 mb-1 border border-[#3a3d48]">
+                        <h5 className="text-center my-2 text-[#b6ff2e] font-semibold text-sm [font-variant:small-caps] border-b border-[#3a3d48] pb-1">
                             Booking Summary
                         </h5>
                         <table className="w-full border-collapse">
@@ -85,13 +85,13 @@ export const BookingSummaryModal = ({
                             id="terms"
                             checked={isTermsAccepted}
                             onChange={handleCheckBox}
-                            className="w-4 h-4 accent-[#6184D8] cursor-pointer"
+                            className="w-4 h-4 accent-[#b6ff2e] cursor-pointer"
                             required
                         />
-                        <label htmlFor="terms" className="text-sm text-lime-400 cursor-pointer">
+                        <label htmlFor="terms" className="text-sm text-[#b6ff2e] cursor-pointer">
                             I agree to the{" "}
                             <button
-                                className="text-blue-600 underline hover:text-blue-800 transition-colors p-0"
+                                className="text-[#b6ff2e] underline hover:text-[#a3e829] transition-colors p-0"
                                 onClick={() => setShowTerms(true)}
                             >
                                 Terms and Conditions
@@ -102,14 +102,14 @@ export const BookingSummaryModal = ({
                     <div className="flex gap-1">
                         <button
                             type="button"
-                            className="flex-1 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                            className="flex-1 py-2 text-sm font-semibold rounded-lg bg-[#23262f] border border-[#3a3d48] text-white hover:bg-[#2d303a] transition-colors"
                             onClick={handleBack}
                         >
                             Back
                         </button>
                         <button
                             type="button"
-                            className="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-2 text-sm font-bold rounded-lg bg-[#b6ff2e] text-[#23262f] hover:bg-[#a3e829] transition-colors shadow-md shadow-[#b6ff2e]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={() => setShowQR(true)}
                             disabled={!isTermsAccepted}
                         >
@@ -119,11 +119,11 @@ export const BookingSummaryModal = ({
                 </div>
 
             ) : (
-                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-5">
+                <div className="bg-gradient-to-br from-[#1a1c24] to-[#23262f] rounded-lg p-5 border border-[#3a3d48]">
                     <div className="flex items-center mb-3">
-                        <div className="bg-white text-blue-600 font-bold px-2.5 py-0.5 rounded text-sm">G</div>
+                        <div className="bg-[#b6ff2e] text-[#23262f] font-bold px-2.5 py-0.5 rounded text-sm">G</div>
                         <span className="text-white font-bold ml-2 text-base tracking-wider">Cash</span>
-                        <span className="ml-auto text-white/50 text-xs">Pay Bill</span>
+                        <span className="ml-auto text-zinc-500 text-xs">Pay Bill</span>
                     </div>
 
                     {paymentStep === 1 && (
@@ -135,12 +135,12 @@ export const BookingSummaryModal = ({
                             
                             <QRCodeDisplay merchantName={Merchant_name} />
                             
-                            <p className="text-white/70 text-sm text-center mt-2">
+                            <p className="text-zinc-400 text-sm text-center mt-2">
                                 Scan QR code using GCash app to pay downpayment
                             </p>
                             
                             <button
-                                className="w-full bg-white text-blue-600 font-bold py-2.5 text-sm rounded-lg hover:bg-gray-100 transition-colors mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-[#b6ff2e] text-[#23262f] font-bold py-2.5 text-sm rounded-lg hover:bg-[#a3e829] transition-colors mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={handleQRPayment}
                                 disabled={isProcessing}
                             >
@@ -148,7 +148,7 @@ export const BookingSummaryModal = ({
                             </button>
                             
                             <button
-                                className="w-full text-white/50 text-sm mt-1.5 py-1 hover:text-white transition-colors"
+                                className="w-full text-zinc-500 text-sm mt-1.5 py-1 hover:text-white transition-colors"
                                 onClick={() => {
                                     setShowQR(false);
                                     setPaymentStep(1);
@@ -162,9 +162,9 @@ export const BookingSummaryModal = ({
 
                     {paymentStep === 2 && (
                         <div className="text-center py-10">
-                            <div className="w-14 h-14 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                            <div className="w-14 h-14 border-4 border-[#b6ff2e] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                             <p className="text-white font-bold text-base">Verifying Payment...</p>
-                            <p className="text-white/50 text-sm mt-1">Please wait a moment</p>
+                            <p className="text-zinc-400 text-sm mt-1">Please wait a moment</p>
                         </div>
                     )}
 
@@ -172,14 +172,14 @@ export const BookingSummaryModal = ({
                         <div className="text-center">
                             <div className="text-5xl mb-2">✅</div>
                             <h5 className="text-white font-bold text-lg">Payment Confirmed!</h5>
-                            <p className="text-white/70 text-sm px-2">
+                            <p className="text-zinc-300 text-sm px-2">
                                 Downpayment of ₱{formatCurrency(bookingDetails.downpayment || 1000)} verified.
                             </p>
                             <div className="bg-green-500/20 border border-green-400/30 text-green-300 text-sm p-2 rounded-lg mt-3">
                                 💡 Remaining balance: ₱{formatCurrency(bookingDetails.remainingBalance || bookingDetails.total - 1000)}
                             </div>
                             <button
-                                className="w-full bg-white text-blue-600 font-bold mt-3 py-2.5 text-sm rounded-lg hover:bg-gray-100 transition-colors shadow"
+                                className="w-full bg-[#b6ff2e] text-[#23262f] font-bold mt-3 py-2.5 text-sm rounded-lg hover:bg-[#a3e829] transition-colors shadow-md shadow-[#b6ff2e]/20"
                                 onClick={onNext}
                             >
                                 Next: Payment Method →

@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { colorStatus } from '../assets/utils/colorStatus';
-import { formatCurrency } from '../assets/Utils/formatCurrency';
 import { useBooking } from '../context/useBooking';
 
 export const AdminProfile = () => {
@@ -18,9 +17,6 @@ export const AdminProfile = () => {
         { label: "Cancelled", count: bookings.filter(b => b.status === "Cancelled").length }
     ];
 
-    const totalRevenue = bookings
-        .filter(b => b.status === "Complete")
-        .reduce((sum, b) => sum + Number(b.total || 0), 0);
 
     const recentBookings = [...bookings]
         .sort((a, b) => parseInt(b.bookID.split('-')[1]) - parseInt(a.bookID.split('-')[1]))
@@ -55,14 +51,6 @@ export const AdminProfile = () => {
                 </div>
             </div>
 
-            {/* Revenue Highlight */}
-            <div className="mt-6 bg-gradient-to-r from-lime-500/10 to-transparent border border-lime-500/40 rounded-lg p-4 flex items-center justify-between">
-                <div>
-                    <div className="text-zinc-400 text-xs uppercase tracking-wide">Total Revenue (Completed)</div>
-                    <div className="text-2xl font-bold text-lime-400 mt-1">₱{formatCurrency(totalRevenue)}</div>
-                </div>
-                <div className="text-4xl">💰</div>
-            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-5 gap-3 mt-6">

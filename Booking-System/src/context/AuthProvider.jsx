@@ -1,121 +1,135 @@
-import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
 import { AuthContext } from "./AuthContext";
+import { API_URL } from './API_URL';
+import { refreshSocketAuth } from '../services/socket.js';
 import AdminProfile from '../assets/Images/lime_rbg2.png';
 import axios from "axios";
 
-const API_URL = 'http://localhost:3001/api';
+
+const authKeys = {
+    currentUser: ['currentUser'],
+};
 
 export const AuthProvider = ({ children }) => {
-
-    const [currentUser, setCurrentUser] = useState(null);
+    const queryClient = useQueryClient();
     const [showSignIn, setShowSignIn] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const userWithRole = useMemo(() => {
-        if (!currentUser) return null;
-        return {
-            ...currentUser,
-            role: currentUser.user_role || currentUser.role || 'User'
-        };
-    }, [currentUser]);
 
-    const fetchCurrentUser = async (token) => {
-        try {
-            const response = await axios.get(`${API_URL}/auth/me`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    const { data: currentUser, isLoading: checkingAuth } = useQuery({
+        queryKey: authKeys.currentUser,
+        queryFn: async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return null;
 
-            if (response.data.success) {
-                setCurrentUser({
-                    ...response.data.user,
-                    role: response.data.user.user_role,
-                    profile: AdminProfile
+            try {
+                const response = await axios.get(`${API_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-            } else {
+
+                if (response.data.success) {
+                    return {
+                        ...response.data.user,
+                        role: response.data.user.user_role,
+                        profile: AdminProfile
+                    };
+                }
                 localStorage.removeItem('token');
+                return null;
+            } catch (error) {
+                console.error('Fetch user error:', error);
+                localStorage.removeItem('token');
+                return null;
             }
-        } catch (error) {
-            console.error('Fetch user error:', error);
-            localStorage.removeItem('token');
-        }
-    };
+        },
+        select: (user) => {
+            if (!user) return null;
+            return {
+                ...user,
+                role: user.user_role || user.role || 'User'
+            };
+        },
+        staleTime: Infinity,
+        retry: false,
+    });
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
+    const loginMutation = useMutation({
+        mutationFn: async ({ email, password }) => {
+            const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+            if (!response.data.success) throw new Error('Login failed');
+            return response.data;
+        },
+        onSuccess: (data) => {
+            localStorage.setItem('token', data.token);
+            queryClient.setQueryData(authKeys.currentUser, {
+                ...data.user,
+                profile: AdminProfile
+            });
+            queryClient.invalidateQueries({ queryKey: ['feedbacks'] });
+            refreshSocketAuth(data.token);
+        },
+        onError: (error) => {
+            console.error('Login error:', error.response?.data || error.message);
+        },
+    });
 
-        const checkAuth = async () => {
-            if (token) {
-                await fetchCurrentUser(token);
-            }
-            setLoading(false);
-        };
-
-        checkAuth();
-    }, []);
+    const registerMutation = useMutation({
+        mutationFn: async ({ email, password, username, role }) => {
+            const response = await axios.post(`${API_URL}/auth/register`, {
+                username, email, password, role: role || 'User'
+            });
+            if (!response.data.success) throw new Error('Registration failed');
+            return response.data;
+        },
+        onSuccess: (data) => {
+            localStorage.setItem('token', data.token);
+            queryClient.setQueryData(authKeys.currentUser, {
+                ...data.user,
+                profile: AdminProfile
+            });
+            queryClient.invalidateQueries({ queryKey: ['feedbacks'] });
+            refreshSocketAuth(data.token);
+        },
+        onError: (error) => {
+            console.error('Register error:', error.response?.data || error.message);
+        },
+    });
 
     const login = async (email, password) => {
-        setLoading(true);
         try {
-            const response = await axios.post(`${API_URL}/auth/login`, {
-                email,
-                password
-            });
-
-            if (response.data.success) {
-                localStorage.setItem('token', response.data.token);
-                setCurrentUser({
-                    ...response.data.user,
-                    profile: AdminProfile
-                });
-                console.log("Logged in user:", response.data.user);
-                return true;
-            } else {
-                return false;
-            }
-        } catch (error) {
-            console.error('Login error:', error.response?.data || error.message);
+            await loginMutation.mutateAsync({ email, password });
+            return true;
+        } catch {
             return false;
-        } finally {
-            setLoading(false);
         }
     };
 
     const register = async ({ email, password, username, role }) => {
-        setLoading(true);
         try {
-            const response = await axios.post(`${API_URL}/auth/register`, {
-                username,
-                email,
-                password,
-                role: role || 'User'
-            });
-
-            if (response.data.success) {
-                localStorage.setItem('token', response.data.token);
-                setCurrentUser({
-                    ...response.data.user,
-                    profile: AdminProfile
-                });
-                console.log("Registered user:", response.data.user);
-                return true;
-            } else {
-                return false;
-            }
-        } catch (error) {
-            console.error('Register error:', error.response?.data || error.message);
+            await registerMutation.mutateAsync({ email, password, username, role });
+            return true;
+        } catch {
             return false;
-        } finally {
-            setLoading(false);
         }
     };
 
     const logout = () => {
         localStorage.removeItem('token');
-        setCurrentUser(null);
+        queryClient.setQueryData(authKeys.currentUser, null);
+        queryClient.invalidateQueries({ queryKey: ['feedbacks'] });
+        refreshSocketAuth(null);
     };
+
+    const loading = checkingAuth || loginMutation.isPending || registerMutation.isPending;
 
     return (
         <AuthContext.Provider value={{
-            currentUser: userWithRole, login, register, logout, showSignIn, setShowSignIn, loading
+            currentUser,
+            login,
+            register,
+            logout,
+            showSignIn,
+            setShowSignIn,
+            loading
         }}>
             {children}
         </AuthContext.Provider>

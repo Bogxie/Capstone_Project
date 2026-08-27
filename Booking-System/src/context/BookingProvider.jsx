@@ -1,147 +1,114 @@
-// context/BookingProvider.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { BookingContext } from "./BookingContext";
+import { socket } from "../services/socket";
+import { useAuth } from "./useAuth.js";
+import { API_URL } from "./API_URL.js";
 import axios from "axios";
-import { socket } from "../services/socket"; // ✅ same singleton na ginagamit sa Calendar/Chat
-import { useAuth } from "./useAuth.js"; // ✅ para malaman kung nag-login/logout na ang user
+
+const bookingKeys = { all: ['bookings'] };
 
 export const BookingProvider = ({ children }) => {
-    const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const { currentUser } = useAuth(); // ✅ babantayan natin 'to
 
-    // ✅ Use useCallback para maging stable ang function
-    const fetchBookings = useCallback(async () => {
-        try {
+    const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    const { data: bookings = [], isLoading: loading, refetch } = useQuery({
+        queryKey: bookingKeys.all,
+        queryFn: async () => {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.log('⚠️ No token found, skipping fetch');
-                setLoading(false);
-                return [];
-            }
+            if (!token) return [];
 
-            const response = await axios.get('http://localhost:3001/api/bookings', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await axios.get(`${API_URL}/bookings`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.data.success) {
-                setBookings(response.data.data);
-                console.log('📦 Bookings loaded:', response.data.count);
-                return response.data.data;
-            }
-        } catch (err) {
-            console.error('Error fetching bookings:', err);
-            setBookings([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);  // ✅ Empty dependency - stable
+            return response.data.success ? response.data.data : [];
+        },
+    });
 
-    // ✅ ✅ ✅ Tumatakbo ulit 'to tuwing magbabago ang currentUser —
-    // ibig sabihin, pag nag-login (walang laman -> may user) o
-    // nag-logout (may user -> null) o nag-switch ng account.
-    // Dati, minsan lang 'to tumatakbo sa mount, kaya blangko pa rin
-    // ang bookings hangga't hindi mo re-reload ang buong page.
     useEffect(() => {
-        fetchBookings();
-    }, [fetchBookings, currentUser]);
+        refetch();
+    }, [currentUser, refetch]);
 
-    // ✅ Use useCallback para maging stable ang function
-    const refreshBookings = useCallback(async () => {
-        setLoading(true);
-        try {
-            const data = await fetchBookings();
-            return data;
-        } finally {
-            setLoading(false);
-        }
-    }, [fetchBookings]);  // ✅ Depends on stable fetchBookings
-
-    // ✅ ✅ ✅ REAL-TIME LISTENER — nakikinig sa broadcast ng backend
-    // tuwing may bagong booking o update (create/status/edit), kahit
-    // ibang user o admin ang gumawa nito, mare-refresh ang bookings
-    // list ng lahat ng connected clients na gumagamit ng context na 'to
-    // (Calendar, AdminPage, UserPage) nang walang manual reload.
     useEffect(() => {
         const onBookingsChanged = (payload) => {
             console.log('🔄 bookings-changed event received:', payload);
-            refreshBookings();
-        };
-
+            queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+        }
         socket.on('bookings-changed', onBookingsChanged);
+        return () => socket.off('bookings-changed', onBookingsChanged);
+    }, [queryClient]);
 
-        return () => {
-            socket.off('bookings-changed', onBookingsChanged);
-        };
-    }, [refreshBookings]);
-
-    // ✅ Use useCallback para maging stable ang function
-    const addBooking = useCallback((bookingData) => {
-        setBookings(prev => [...prev, bookingData]);
-        return bookingData;
-    }, []);  // ✅ Empty dependency - stable
-
-    // ✅ Use useCallback para maging stable ang function
-    const updateBooking = useCallback(async (id, updatedData) => {
-        try {
+    const createMutation = useMutation({
+        mutationFn: async (bookingData) => {
             const token = localStorage.getItem('token');
-            console.log('🔄 updateBooking:', { id, updatedData });
+            const response = await axios.post(`${API_URL}/bookings`, bookingData, { headers: { 'Authorization': `Bearer ${token}` } });
 
+            if (!response.data.success) throw new Error('Booking creation Failed');
+
+            return {
+                ...bookingData,
+                booking_id: response.data.bookingId,
+                display_id: response.data.displayId,
+                total: response.data.total,
+                subtotal: response.data.subtotal,
+                tax: response.data.tax,
+                status: 'Pending'
+            };
+
+        },
+        onSuccess: (newBooking) => {
+            queryClient.setQueryData(bookingKeys.all, (old = []) => [...old, newBooking]);
+        },
+        onError: (err) => {
+            console.error('Error create Booking: ', err);
+        },
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: async ({ id, updatedData }) => {
+            const token = localStorage.getItem('token');
             const isStatusOnly = updatedData.status && Object.keys(updatedData).length === 1;
 
-            if (isStatusOnly) {
-                const response = await axios.put(
-                    `http://localhost:3001/api/bookings/${id}/status`,
+            const response = isStatusOnly
+                ? await axios.put(`${API_URL}/bookings/${id}/status`,
                     { status: updatedData.status },
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
-
-                if (response.data.success) {
-                    setBookings(prev =>
-                        prev.map(booking =>
-                            booking.booking_id === id || booking.booking_id === Number(id)
-                                ? { ...booking, status: updatedData.status }
-                                : booking
-                        )
-                    );
-                    return response.data.data;
-                }
-            } else {
-                const response = await axios.put(
-                    `http://localhost:3001/api/bookings/${id}`,
+                    { headers: { 'Authorization': `Bearer ${token}` } })
+                : await axios.put(`${API_URL}/bookings/${id}`,
                     updatedData,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
+                    { headers: { 'Authorization': `Bearer ${token}` } });
 
-                if (response.data.success) {
-                    setBookings(prev =>
-                        prev.map(booking =>
-                            booking.booking_id === id || booking.booking_id === Number(id)
-                                ? { ...booking, ...response.data.data }
-                                : booking
-                        )
-                    );
-                    return response.data.data;
-                }
-            }
-        } catch (err) {
+            if (!response.data.success) throw new Error('Update failed');
+            return response.data.data;
+        },
+        onSuccess: (updatedBooking) => {
+            queryClient.setQueryData(bookingKeys.all, (old = []) =>
+                old.map(b => b.booking_id === updatedBooking.booking_id ? updatedBooking : b)
+            );
+        },
+        onError: (err) => {
             console.error('❌ Error updating booking:', err);
             console.error('❌ Error response:', err.response?.data);
-            throw err;
-        }
-    }, []);  // ✅ Empty dependency - stable
+        },
+    });
+
+
+    const createBooking = (bookingData) => createMutation.mutateAsync(bookingData);
+
+    const updateBooking = (id, updatedData) => updateMutation.mutateAsync({ id, updatedData });
+
+    const refreshBookings = () => refetch();
 
     return (
         <BookingContext.Provider value={{
             bookings,
             loading,
-            addBooking,
+            createBooking,
             updateBooking,
             refreshBookings
         }}>
             {children}
         </BookingContext.Provider>
     );
-};
+};  

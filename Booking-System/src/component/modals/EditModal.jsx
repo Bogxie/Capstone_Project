@@ -136,7 +136,7 @@ export const EditModal = ({ booking, onClose, handleEdit }) => {
     return (
         <>
             <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm">
-                <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
 
                     <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 shrink-0">
                         <h5 className="font-bold text-sm text-white">✏️ Edit Booking <span className="text-lime-400">#{displayId}</span></h5>

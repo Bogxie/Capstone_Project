@@ -6,31 +6,30 @@ import { InputsModal } from "./InputsModal.jsx";
 import { BookingSummaryModal } from "./BookingSummary.jsx";
 import { PaymentModal } from './PaymentModal.jsx';
 import { getDeliveryFee } from '../../assets/utils/deliveryOptions.js';
-import { timeFormat } from "../../assets/Utils/tImeOptions.jsx";
+import { timeFormat } from "../../assets/utils/timeOptions.jsx";
 import { timeRestriction } from "../../assets/Utils/TimeRestriction.js";
 import { calculatingTotal } from "../../assets/Utils/calculatingTotal.js";
 import { TermsModal } from "./TermsModal.jsx";
 import { service_config } from "../../assets/Utils/ServiceConfig.js";
-import axios from "axios";
 import '../../assets/css/BookingModal.css';
 
 const Downpayment = 1000;
 
 const headerTheme = {
-    "Golden Hour": { 
-        bg: "bg-amber-500", 
-        closeBtn: "text-black hover:text-black/70", 
-        text: "text-black" 
+    "Golden Hour": {
+        bg: "bg-amber-500",
+        closeBtn: "text-black hover:text-black/70",
+        text: "text-black"
     },
-    "Snoop Dough": { 
-        bg: "bg-orange-600", 
-        closeBtn: "text-white hover:text-white/70", 
-        text: "text-white" 
+    "Snoop Dough": {
+        bg: "bg-orange-600",
+        closeBtn: "text-white hover:text-white/70",
+        text: "text-white"
     },
-    "Rental Projector": { 
-        bg: "bg-cyan-500", 
-        closeBtn: "text-white hover:text-white/70", 
-        text: "text-white" 
+    "Rental Projector": {
+        bg: "bg-cyan-500",
+        closeBtn: "text-white hover:text-white/70",
+        text: "text-white"
     },
 };
 
@@ -39,9 +38,9 @@ export const BookingModal = ({
 }) => {
 
     const config = serviceConfig[serviceName] || service_config[serviceName];
-    const theme = headerTheme[serviceName] ?? { bg: "bg-lime-500", closeBtn: "text-black hover:text-black/70", text: "text-black" };
+    const theme = headerTheme[serviceName] ?? { bg: "bg-[#b6ff2e]", closeBtn: "text-[#23262f] hover:text-[#23262f]/70", text: "text-[#23262f]" };
     const { currentUser } = useAuth();
-    const { addBooking, refreshBookings } = useBooking();
+    const { createBooking } = useBooking();
     const [step, setStep] = useState(1);
     const [showTerms, setShowTerms] = useState(false);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
@@ -165,47 +164,20 @@ export const BookingModal = ({
         };
 
         try {
-            const token = localStorage.getItem('token');
-            
-            const response = await axios.post(
-                'http://localhost:3001/api/bookings',
-                bookingData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
 
-            if (response.data.success) {
-                const newBooking = {
-                    ...bookingData,
-                    booking_id: response.data.bookingId,
-                    display_id: response.data.displayId,
-                    total: response.data.total,
-                    subtotal: response.data.subtotal,
-                    tax: response.data.tax,
-                    status: 'Pending'
-                };
+            const newBooking = await createBooking(bookingData);
+            const socket = window.socket;
+            if (socket) {
+                const dateKey = `${bookingDetails.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(bookingDetails.date).padStart(2, '0')}`;
 
-                await addBooking(newBooking);
-                await refreshBookings();
-                
-                // ✅ ✅ ✅ ITO ANG KULANG! - Clear temp booking
-                const socket = window.socket;
-                if (socket) {
-                    const dateKey = `${bookingDetails.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(bookingDetails.date).padStart(2, '0')}`;
-                    
-                    // ✅ Send booking-confirmed to clear temp booking
-                    socket.emit('booking-confirmed', {
-                        date: dateKey,
-                        service: bookingDetails.service,
-                        userId: currentUser?.user_id || null
-                    });
-                }
-                
-                showReceipt(newBooking);
+                socket.emit('booking-confirmed', {
+                    date: dateKey,
+                    service: bookingDetails.service,
+                    userId: currentUser?.user_id || null
+                });
             }
+
+            showReceipt(newBooking);
         } catch (err) {
             console.error('❌ Error creating booking:', err);
             if (err.response?.status === 409) {
@@ -253,7 +225,7 @@ export const BookingModal = ({
             {!showTerms && (
                 <div
                     style={{ position: 'fixed', inset: 0, zIndex: 1055 }}
-                    className="flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm p-4"
+                    className="flex items-center justify-center bg-[#23262f]/95 p-4"
                 >
                     <motion.div
                         initial={{ opacity: 0, x: 30 }}
@@ -264,7 +236,7 @@ export const BookingModal = ({
                         style={{ maxHeight: '100vh', minHeight: '70vh', display: 'flex', flexDirection: 'column' }}
                     >
                         <div
-                            className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl text-white w-full"
+                            className="bg-[#2d303a] border border-[#3a3d48] rounded-xl shadow-2xl text-white w-full"
                             style={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100vh' }}
                         >
                             <div className={`flex justify-between items-center py-3 px-4 rounded-t-xl shrink-0 ${theme.bg}`}>

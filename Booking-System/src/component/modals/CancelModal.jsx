@@ -9,7 +9,7 @@ export const CancelModal = ({
   const displayId = booking.display_id || booking.bookID;
 
   return (
-    <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-[#23262f]/95 p-2 sm:p-4">
       <div className="w-full max-w-md rounded-xl border border-red-500 bg-zinc-900 text-white shadow-xl">
         {/* Header */}
         <div className="relative p-4">

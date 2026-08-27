@@ -41,20 +41,20 @@ export const BookingOptions = ({
     };
 
     const serviceColors = {
-        "Golden Hour": { 
-            selectedBg: "bg-amber-400", 
-            selectedText: "text-black", 
-            ring: "ring-amber-400" 
+        "Golden Hour": {
+            selectedBg: "bg-amber-400",
+            selectedText: "text-black",
+            ring: "ring-amber-400"
         },
-        "Snoop Dough": { 
-            selectedBg: "bg-orange-600", 
-            selectedText: "text-white", 
-            ring: "ring-orange-500" 
+        "Snoop Dough": {
+            selectedBg: "bg-orange-600",
+            selectedText: "text-white",
+            ring: "ring-orange-500"
         },
-        "Rental Projector": { 
-            selectedBg: "bg-cyan-500", 
-            selectedText: "text-white", 
-            ring: "ring-cyan-500" 
+        "Rental Projector": {
+            selectedBg: "bg-cyan-500",
+            selectedText: "text-white",
+            ring: "ring-cyan-500"
         },
     };
 
@@ -62,35 +62,34 @@ export const BookingOptions = ({
     const services = Object.keys(serviceConfig).map(brand => ({
         service: brand,
         image: serviceImages[brand] || null,
-        ...serviceColors[brand] || { 
-            selectedBg: "bg-gray-600", 
-            selectedText: "text-white", 
-            ring: "ring-gray-500" 
+        ...serviceColors[brand] || {
+            selectedBg: "bg-gray-600",
+            selectedText: "text-white",
+            ring: "ring-gray-500"
         }
     }));
 
-    // ✅ FALLBACK: Kung walang serviceConfig, gumamit ng default
     const defaultServices = [
-        { 
-            service: "Golden Hour", 
-            image: logo, 
-            selectedBg: "bg-amber-400", 
-            selectedText: "text-black", 
-            ring: "ring-amber-400" 
+        {
+            service: "Golden Hour",
+            image: logo,
+            selectedBg: "bg-amber-400",
+            selectedText: "text-black",
+            ring: "ring-amber-400"
         },
-        { 
-            service: "Snoop Dough", 
-            image: logo2, 
-            selectedBg: "bg-orange-600", 
-            selectedText: "text-white", 
-            ring: "ring-orange-500" 
+        {
+            service: "Snoop Dough",
+            image: logo2,
+            selectedBg: "bg-orange-600",
+            selectedText: "text-white",
+            ring: "ring-orange-500"
         },
-        { 
-            service: "Rental Projector", 
-            image: logo3, 
-            selectedBg: "bg-cyan-500", 
-            selectedText: "text-white", 
-            ring: "ring-cyan-500" 
+        {
+            service: "Rental Projector",
+            image: logo3,
+            selectedBg: "bg-cyan-500",
+            selectedText: "text-white",
+            ring: "ring-cyan-500"
         },
     ];
 
@@ -136,7 +135,7 @@ export const BookingOptions = ({
     return (
         <>
             {!isConfirmed && (
-                <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-[#23262f]/95">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -144,11 +143,11 @@ export const BookingOptions = ({
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         className="w-full max-w-md mx-4"
                     >
-                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden text-white">
+                        <div className="bg-[#2d303a] border border-[#3a3d48] rounded-xl shadow-2xl overflow-hidden text-white">
 
-                            <div className="flex justify-between items-center px-5 py-4 border-b border-zinc-800">
+                            <div className="flex justify-between items-center px-5 py-4 border-b border-[#3a3d48]">
                                 <div>
-                                    <h5 className="text-sm font-bold text-lime-500 tracking-wide uppercase mb-0">
+                                    <h5 className="text-sm font-bold text-[#b6ff2e] tracking-wide uppercase mb-0">
                                         Type of booking
                                     </h5>
                                     <small className="text-xs text-zinc-400">
@@ -168,16 +167,15 @@ export const BookingOptions = ({
 
                             <div className="px-5 py-4">
                                 {isChecking && (
-                                    <div className="text-center py-4 mb-3 bg-lime-500/10 rounded-lg border border-lime-500/20">
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-lime-500 mx-auto"></div>
-                                        <p className="text-sm text-lime-400 mt-2">Checking availability...</p>
+                                    <div className="text-center py-4 mb-3 bg-[#b6ff2e]/10 rounded-lg border border-[#b6ff2e]/20">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#b6ff2e] mx-auto"></div>
+                                        <p className="text-sm text-[#b6ff2e] mt-2">Checking availability...</p>
                                     </div>
                                 )}
 
                                 <ul className="space-y-2">
                                     {finalServices.map((svc, i) => {
                                         const isBooked = bookedServices?.has(svc.service);
-                                        // ✅ ETO ANG SUSI: Galing sa database ang disableServices
                                         const isDisabled = disableServices.includes(svc.service);
                                         const isAvailable = availableServices.includes(svc.service);
                                         const hasConflict = !isAvailable && !isBooked && !isDisabled;
@@ -186,7 +184,7 @@ export const BookingOptions = ({
 
                                         let badgeText = "";
                                         let badgeColor = "";
-                                        
+
                                         if (isDisabled) {
                                             badgeText = "🚫 Unavailable";
                                             badgeColor = "bg-zinc-700 text-zinc-400";
@@ -198,6 +196,12 @@ export const BookingOptions = ({
                                             badgeColor = "bg-amber-500/20 border border-amber-500/50 text-amber-400";
                                         }
 
+                                        const textColorClass = isDisabled || isBooked
+                                            ? 'text-zinc-500 line-through'
+                                            : isCurrentSelected
+                                                ? svc.selectedText
+                                                : 'text-zinc-300';
+
                                         return (
                                             <li
                                                 key={i}
@@ -206,9 +210,9 @@ export const BookingOptions = ({
                                                     p-3 rounded-lg border transition-all duration-200
                                                     ${isCurrentSelected && !isUnselectable
                                                         ? `${svc.selectedBg} ${svc.selectedText} font-bold shadow-lg ring-2 ${svc.ring}`
-                                                        : isDisabled
+                                                        : isDisabled || isBooked
                                                             ? "border-zinc-700 bg-zinc-800/30 opacity-50 cursor-not-allowed"
-                                                            : "border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 hover:border-zinc-700 cursor-pointer"
+                                                            : "border-[#3a3d48] bg-[#23262f]/40 hover:bg-[#2d303a] hover:border-[#3a3d48] cursor-pointer"
                                                     }
                                                     ${isUnselectable ? "cursor-not-allowed" : ""}
                                                     ${hasConflict ? "border-amber-500/30 bg-amber-500/5" : ""}
@@ -220,11 +224,11 @@ export const BookingOptions = ({
                                                             <img
                                                                 src={svc.image}
                                                                 alt={`logo-${i}`}
-                                                                className={`w-12 h-12 object-contain rounded-md ${isDisabled ? "opacity-40 grayscale" : ""}`}
+                                                                className={`w-12 h-12 object-contain rounded-md ${isDisabled || isBooked ? "opacity-40 grayscale" : ""}`}
                                                             />
                                                         )}
                                                         <div>
-                                                            <span className={`text-sm font-semibold ${isDisabled ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>
+                                                            <span className={`text-sm font-semibold ${textColorClass}`}>
                                                                 {svc.service}
                                                             </span>
                                                             {badgeText && (
@@ -235,6 +239,11 @@ export const BookingOptions = ({
                                                             {isDisabled && (
                                                                 <span className="block text-[9px] text-zinc-500 mt-0.5">
                                                                     Disabled by admin
+                                                                </span>
+                                                            )}
+                                                            {isBooked && (
+                                                                <span className="block text-[9px] text-zinc-500 mt-0.5">
+                                                                    Already booked
                                                                 </span>
                                                             )}
                                                         </div>
@@ -256,13 +265,13 @@ export const BookingOptions = ({
 
                                 <div className="flex gap-2 mt-5">
                                     <button
-                                        className="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors focus:outline-none"
+                                        className="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-[#23262f] border border-[#3a3d48] text-zinc-300 hover:text-white hover:bg-[#2d303a] transition-colors focus:outline-none"
                                         onClick={handleClose}
                                     >
                                         Cancel
                                     </button>
                                     <button
-                                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg bg-lime-500 text-black hover:bg-lime-400 transition-colors shadow-md shadow-lime-500/10 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none`}
+                                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg bg-[#b6ff2e] text-[#23262f] hover:bg-[#a3e829] transition-colors shadow-md shadow-[#b6ff2e]/10 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none`}
                                         disabled={!selected || isChecking}
                                         onClick={handleContinue}
                                     >
